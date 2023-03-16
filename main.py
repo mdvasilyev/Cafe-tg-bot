@@ -1,7 +1,5 @@
 import telebot
 from telebot import types
-import urllib.request
-from PIL import Image
 
 bot = telebot.TeleBot('6049022584:AAEK8QxoT9kN0E1LTYaNhKNz4NjDdTxIdok')
 order_list = {"плов из баранины": 0, "первое блюдо 1": 0}
@@ -296,32 +294,3 @@ def mess(message):
 	bot.send_message(message.chat.id, final_message, parse_mode='html', reply_markup=markup)
 
 bot.polling(none_stop=True)
-
-
-
-
-
-
-
-
-
-
-# # Серые  кнопки под сообщением
-# @bot.message_handler(commands=['website'])
-# def open_website(message):
-# 	markup = types.InlineKeyboardMarkup()
-# 	markup.add(types.InlineKeyboardButton("Перейти на сайт", url="https://itproger.com"))
-# 	sir_photo = open('sirius.jpg', "rb")
-# 	bot.send_photo(message.chat.id, sir_photo, caption="Сириус")
-# 	bot.send_message(message.chat.id, "А вот и Калмыкия на картах")
-# 	bot.send_location(message.chat.id, 46.1867, 45.0000)
-# 	bot.send_message(message.chat.id,
-# 			"Отличный выбор, нажмите на кнопку ниже и переходите на сайт",
-# 			parse_mode='html', reply_markup=markup)
-#
-# # Вариант со стикером
-# @bot.message_handler(commands=['insta'])
-# def instagram(message):
-# 	markup = types.InlineKeyboardMarkup(row_width=1)
-# 	markup.add(types.InlineKeyboardButton("Перейти в Инстаграм", url="https://www.instagram.com/itproger_official/"), types.InlineKeyboardButton("Или не перейти на сайт?", url="https://translate.yandex.ru/translator/ru-en"))
-# 	bot.send_message(message.chat.id, "\U000026C4 Нажмите на кнопку ниже и <i>погрузитесь</i> в мир <b>IT</b> <u>прямо сейчас</u>", parse_mode='html', reply_markup=markup)
