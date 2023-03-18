@@ -1,34 +1,38 @@
 import telebot
+import asyncio
+from telebot.async_telebot import AsyncTeleBot
 from telebot import types
 
-bot = telebot.TeleBot('6049022584:AAEK8QxoT9kN0E1LTYaNhKNz4NjDdTxIdok')
+bot = AsyncTeleBot('6049022584:AAEK8QxoT9kN0E1LTYaNhKNz4NjDdTxIdok')
 order_list = {"плов из баранины": 0, "первое блюдо 1": 0}
 section_stack = []
 dish_stack = []
 
-bot.set_my_commands([
-    telebot.types.BotCommand("/start", "main menu"),
-    telebot.types.BotCommand("/vk", "link to vk"),
-	telebot.types.BotCommand("/phone", "call us via phone")
-])
+async def setup_bot_commands():
+	bot_commands = [
+		telebot.types.BotCommand("/start", "main menu"),
+		telebot.types.BotCommand("/vk", "link to vk"),
+		telebot.types.BotCommand("/phone", "call us via phone")
+	]
+	await bot.set_my_commands(bot_commands)
 
 @bot.message_handler(commands=['start'])
-def start(message):
+async def start(message):
 	markup = start_menu()
 	send_mess = f"Привет, <b>{message.from_user.first_name} {message.from_user.last_name}</b>!\nЯ бот, который поможет " \
 				f"тебе сделать заказ"
-	bot.send_message(message.chat.id, send_mess, parse_mode='html', reply_markup=markup)
+	await bot.send_message(message.chat.id, send_mess, parse_mode='html', reply_markup=markup)
 
 @bot.message_handler(commands=['vk'])
-def vk(message):
+async def vk(message):
 	markup = types.InlineKeyboardMarkup()
 	markup.add(types.InlineKeyboardButton("Посетить группу Вк", url="https://ru.wikipedia.org/wiki/%D0%A1%D1%82%D0%BE"
 																	"%D0%BB%D0%BE%D0%B2%D0%B0%D1%8F"))
-	bot.send_message(message.chat.id, "Нажмите на кнопку ниже и посетите нашу группу Вк", parse_mode='html', reply_markup=markup)
+	await bot.send_message(message.chat.id, "Нажмите на кнопку ниже и посетите нашу группу Вк", parse_mode='html', reply_markup=markup)
 
 @bot.message_handler(commands=['phone'])
-def phone(message):
-	bot.send_message(message.chat.id, "Вы можете связаться с нами по телефону: <i>+7(123)456-78-90</i>", parse_mode='html')
+async def phone(message):
+	await bot.send_message(message.chat.id, "Вы можете связаться с нами по телефону: <i>+7(123)456-78-90</i>", parse_mode='html')
 
 def start_menu():
 	markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=3)
@@ -173,7 +177,7 @@ def number_of_dishes():
 	return markup
 
 @bot.message_handler(content_types=['text'])
-def mess(message):
+async def mess(message):
 	get_message_bot = message.text.strip().lower()
 	if get_message_bot == "вернуться к списку блюд":
 		markup = start_menu()
@@ -291,6 +295,6 @@ def mess(message):
 	else:
 		markup = start_menu()
 		final_message = "Я весьма интровертичен и люблю только принимать ваши заказы \U0001F601"
-	bot.send_message(message.chat.id, final_message, parse_mode='html', reply_markup=markup)
+	await bot.send_message(message.chat.id, final_message, parse_mode='html', reply_markup=markup)
 
-bot.polling(none_stop=True)
+asyncio.run(bot.polling())
