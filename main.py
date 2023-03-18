@@ -1,7 +1,6 @@
 import pandas as pd
 import telebot
 import asyncio
-import csv
 from telebot.async_telebot import AsyncTeleBot
 from telebot import types
 
@@ -10,17 +9,17 @@ order_list = {"плов из баранины": 0, "первое блюдо 1": 
 section_stack = []
 dish_stack = []
 
-# myTable = []
-# with open("Book1.csv", 'r', encoding='utf-8-sig') as File:
-#     reader = csv.DictReader(File)
-#     for row in reader:
-#         myTable.append(row)
-
-df = pd.read_csv('Book1.csv')
+df = pd.read_excel('dishes.xlsx')
 
 @bot.message_handler(commands=['test'])
 async def send_text(message):
-	await bot.send_message(message.chat.id, f"{[df['Height (in inches)'].tolist()[i] for i in range(10)]}")
+	indexes = list(~pd.isna(df['Салаты']))
+	await bot.send_message(message.chat.id, f"{df['Салаты'][indexes].to_string(index=False)}")
+
+@bot.message_handler(commands=['test2'])
+async def send_text(message):
+	indexes = list(~pd.isna(df['Горячее']))
+	await bot.send_message(message.chat.id, f"{df['Горячее'][indexes].to_string(index=False)}")
 
 async def setup_bot_commands():
 	bot_commands = [
@@ -216,7 +215,7 @@ async def mess(message):
 		markup = main_course()
 		final_message = "1. Картопляник с грибами, 1 шт, 109р.\n2. Тефтели, 2 шт, 129р.\n3. Кусочки куриного филе в " \
 						"сливочном соусе, 139р.\n4. Плов из курицы, 220г, 156р.\n5. Макароны по флотски, 133р.\n6. " \
-						"Шаурма с курицей, 400г, 183р.\n7. Гуляш из говядины, 130г, 192р.\n8. Курица по-французски, " \
+						"Шаурма с курицей, 400г, 183р.\n7. Гуляш из говядины, 130г, 192р. " \
 						"169р."
 	elif get_message_bot == "гарнир":
 		section_stack.append("гарнир")
