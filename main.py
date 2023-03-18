@@ -1,5 +1,7 @@
+import pandas as pd
 import telebot
 import asyncio
+import csv
 from telebot.async_telebot import AsyncTeleBot
 from telebot import types
 
@@ -7,6 +9,18 @@ bot = AsyncTeleBot('6049022584:AAEK8QxoT9kN0E1LTYaNhKNz4NjDdTxIdok')
 order_list = {"плов из баранины": 0, "первое блюдо 1": 0}
 section_stack = []
 dish_stack = []
+
+# myTable = []
+# with open("Book1.csv", 'r', encoding='utf-8-sig') as File:
+#     reader = csv.DictReader(File)
+#     for row in reader:
+#         myTable.append(row)
+
+df = pd.read_csv('Book1.csv')
+
+@bot.message_handler(commands=['test'])
+async def send_text(message):
+	await bot.send_message(message.chat.id, f"{[df['Height (in inches)'].tolist()[i] for i in range(10)]}")
 
 async def setup_bot_commands():
 	bot_commands = [
