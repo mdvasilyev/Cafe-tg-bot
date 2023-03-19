@@ -67,6 +67,12 @@ def start_menu():
 	markup.add(btn10)
 	return markup
 
+def gen_menu(dframe, dish: str):
+	indexes = list(~pd.isna(dframe[dish]))
+	l = dframe[dish][indexes]
+	msg = '\n'.join(l)
+	return msg
+
 def gen_markup(dframe, dish: str, r_width = 3):
 	markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=r_width)
 	indexes = list(~pd.isna(df[dish]))
@@ -149,67 +155,55 @@ async def mess(message):
 		if len(section_stack) != 1:
 			section_stack.pop(0)
 		markup = salads()
-		final_message = "1. Салат «Витаминный», 120г, 65р.\n2. Салат «питерский», 120г, 76р.\n3. Салат цезарь с " \
-						"курицей, 167р."
+		final_message = gen_menu(df, 'Салаты')
 	elif get_message_bot == "супы":
 		section_stack.append("супы")
 		if len(section_stack) != 1:
 			section_stack.pop(0)
 		markup = soups()
-		final_message = "1. Крем-суп из овощей, 300г, 71р."
+		final_message = gen_menu(df, 'Супы')
 	elif get_message_bot == "горячее":
 		section_stack.append("горячее")
 		if len(section_stack) != 1:
 			section_stack.pop(0)
 		markup = main_course()
-		final_message = "1. Картопляник с грибами, 1 шт, 109р.\n2. Тефтели, 2 шт, 129р.\n3. Кусочки куриного филе в " \
-						"сливочном соусе, 139р.\n4. Плов из курицы, 220г, 156р.\n5. Макароны по флотски, 133р.\n6. " \
-						"Шаурма с курицей, 400г, 183р.\n7. Гуляш из говядины, 130г, 192р. " \
-						"169р."
+		final_message = gen_menu(df, 'Горячее')
 	elif get_message_bot == "гарнир":
 		section_stack.append("гарнир")
 		if len(section_stack) != 1:
 			section_stack.pop(0)
 		markup = garnish()
-		final_message = "1. Картофельное пюре, 150г, 65р.\n2. Гречка, 150г, 55р.\n3. Запеченая картошка, 70р."
+		final_message = gen_menu(df, 'Гарнир')
 	elif get_message_bot == "пицца и хачапури из печи":
 		section_stack.append("пицца и хачапури из печи")
 		if len(section_stack) != 1:
 			section_stack.pop(0)
 		markup = pizza()
-		final_message = "1. Пицца «Пепперони», 500г (целая), 430р.\n2. Пицца «Пепперони», 1 кусок, 55р.\n3. Пицца " \
-						"«Цыпленок Чеддер», 500г (целая), 440р.\n4. Пицца «Цыпленок Чеддер», 1 кусок, 56р.\n5. Пицца " \
-						"«Бекон пармезан», 500г (целая), 450р.\n6. Пицца «Бекон пармезан», 1 кусок, 57р.\n7. Пицца " \
-						"«Четыре сыра», 500г (целая), 450р.\n8. Пицца «Четыре сыра», 1 кусок, 57р.\n9. Пицца " \
-						"«Супермясная», 500г (целая), 490р.\n10. Пицца «Супермясная», 1 кусок, 62р.\n11. Пицца 50/50 (" \
-						"на выбор), 500г (целая), 450р.\n12. Хачапури, 300г, 256р."
+		final_message = gen_menu(df, 'Пицца и хачапури из печи')
 	elif get_message_bot == "выпечка":
 		section_stack.append("выпечка")
 		if len(section_stack) != 1:
 			section_stack.pop(0)
 		markup = bakery()
-		final_message = "1. Слойка с ветчиной и сыром, 75р.\n2. Сосиска в тесте, 67р.\n3. Улитка с творогом, 71р.\n4. " \
-						"Запеканка, 109р.\n5. Слойка с вишней, 65р.\n6. Штрудель с яблоком, 109р.\n7. Сосиска в " \
-						"слоёном тесте с сыром, 82р."
+		final_message = gen_menu(df, 'Выпечка')
 	elif get_message_bot == "десерты":
 		section_stack.append("десерты")
 		if len(section_stack) != 1:
 			section_stack.pop(0)
 		markup = desserts()
-		final_message = "1. Чизкейк, 113р.\n2. Ред вильвет, 137р.\n3. Брауни, 157р.\n4. Сметанник, 137р."
+		final_message = gen_menu(df, 'Десерты')
 	elif get_message_bot == "напитки":
 		section_stack.append("напитки")
 		if len(section_stack) != 1:
 			section_stack.pop(0)
 		markup = drinks()
-		final_message = "1. Вода 0.5л, 60р.\n2. Компот ягодный литр, 100р.\n3. Липтон 0.5 (персик, лимон и зеленый), 73р."
+		final_message = gen_menu(df, 'Напитки')
 	elif get_message_bot == "ланчбоксы":
 		section_stack.append("ланчбоксы")
 		if len(section_stack) != 1:
 			section_stack.pop(0)
 		markup = lunchbox()
-		final_message = "1. Суповой, 14р. (при заказе супа)\n2. Большой, 16р. (при заказе горячих блюд)\n3. Маленький, " \
-						"6р. (при заказе блюд и выпечки, которая не может поместиться в пакеты)"
+		final_message = gen_menu(df, 'Ланчбоксы')
 	elif get_message_bot == "1":
 		dish_stack.append("плов из баранины")
 		if len(dish_stack) != 1:
