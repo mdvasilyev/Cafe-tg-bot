@@ -8,21 +8,19 @@ bot = AsyncTeleBot('6049022584:AAEK8QxoT9kN0E1LTYaNhKNz4NjDdTxIdok')
 order_list = {"плов из баранины": 0, "первое блюдо 1": 0}
 section_stack = []
 dish_stack = []
+admins = [1208161291]
 
 df = pd.read_excel('dishes.xlsx')
+test_df = pd.read_csv('Book1.csv')
 
 @bot.message_handler(commands=['test'])
 async def send_text(message):
-	indexes = list(~pd.isna(df['Салаты']))
-	slds = df['Салаты'][indexes]
-	mes = '\n'.join(slds)
-	await bot.send_message(message.chat.id, f"{mes}")
-
-@bot.message_handler(commands=['test2'])
-async def send_text(message):
-	indexes = list(~pd.isna(df['Горячее']))
-	gor = df['Горячее'][indexes]
-	mes = '\n'.join(gor)
+	l = list(test_df['Name'])
+	# mes = ' '.join(l)
+	mes = '\n'.join(l)
+	# indexes = list(~pd.isna(df['Салаты']))
+	# slds = df['Салаты'][indexes]
+	# mes = '\n'.join(slds)
 	await bot.send_message(message.chat.id, f"{mes}")
 
 async def setup_bot_commands():
@@ -50,6 +48,15 @@ async def vk(message):
 @bot.message_handler(commands=['phone'])
 async def phone(message):
 	await bot.send_message(message.chat.id, "Вы можете связаться с нами по телефону: <i>+7(123)456-78-90</i>", parse_mode='html')
+
+@bot.message_handler(commands=['admin'])
+async def phone(message):
+	is_admin = message.from_user.id
+	if is_admin in admins:
+		send_mess = 'Вы админ'
+	else:
+		send_mess = 'Вы не админ'
+	await bot.send_message(message.chat.id, send_mess, parse_mode='html')
 
 def start_menu():
 	markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=3)
