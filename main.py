@@ -14,12 +14,16 @@ df = pd.read_excel('dishes.xlsx')
 @bot.message_handler(commands=['test'])
 async def send_text(message):
 	indexes = list(~pd.isna(df['Салаты']))
-	await bot.send_message(message.chat.id, f"{df['Салаты'][indexes].to_string(index=False)}")
+	slds = df['Салаты'][indexes]
+	mes = '\n'.join(slds)
+	await bot.send_message(message.chat.id, f"{mes}")
 
 @bot.message_handler(commands=['test2'])
 async def send_text(message):
 	indexes = list(~pd.isna(df['Горячее']))
-	await bot.send_message(message.chat.id, f"{df['Горячее'][indexes].to_string(index=False)}")
+	gor = df['Горячее'][indexes]
+	mes = '\n'.join(gor)
+	await bot.send_message(message.chat.id, f"{mes}")
 
 async def setup_bot_commands():
 	bot_commands = [
