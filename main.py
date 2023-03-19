@@ -67,111 +67,56 @@ def start_menu():
 	markup.add(btn10)
 	return markup
 
+def gen_markup(dframe, dish: str, r_width = 3):
+	markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=r_width)
+	indexes = list(~pd.isna(df[dish]))
+	l = dframe[dish][indexes]
+	markup.add(*[types.KeyboardButton(f'{i + 1}') for i in range(len(l))])
+	return markup
+
 def salads():
-	markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=3)
-	btn1 = types.KeyboardButton('1')
-	btn2 = types.KeyboardButton('2')
-	btn3 = types.KeyboardButton('3')
-	btn4 = types.KeyboardButton("Вернуться к списку блюд")
-	markup.add(btn1, btn2, btn3)
-	markup.add(btn4)
+	markup = gen_markup(df, 'Салаты', 3)
+	markup.add(types.KeyboardButton("Вернуться к списку блюд"))
 	return markup
 
 def soups():
-	markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=1)
-	btn1 = types.KeyboardButton('1')
-	btn2 = types.KeyboardButton("Вернуться к списку блюд")
-	markup.add(btn1)
-	markup.add(btn2)
+	markup = gen_markup(df, 'Супы', 1)
+	markup.add(types.KeyboardButton("Вернуться к списку блюд"))
 	return markup
 
 def main_course():
-	markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=4)
-	btn1 = types.KeyboardButton('1')
-	btn2 = types.KeyboardButton('2')
-	btn3 = types.KeyboardButton('3')
-	btn4 = types.KeyboardButton('4')
-	btn5 = types.KeyboardButton('5')
-	btn6 = types.KeyboardButton("6")
-	btn7 = types.KeyboardButton("7")
-	btn8 = types.KeyboardButton("8")
-	btn9 = types.KeyboardButton("Вернуться к списку блюд")
-	markup.add(btn1, btn2, btn3, btn4, btn5, btn6, btn7, btn8)
-	markup.add(btn9)
+	markup = gen_markup(df, 'Горячее', 4)
+	markup.add(types.KeyboardButton("Вернуться к списку блюд"))
 	return markup
 
 def garnish():
-	markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=3)
-	btn1 = types.KeyboardButton('1')
-	btn2 = types.KeyboardButton('2')
-	btn3 = types.KeyboardButton('3')
-	btn4 = types.KeyboardButton("Вернуться к списку блюд")
-	markup.add(btn1, btn2, btn3)
-	markup.add(btn4)
+	markup = gen_markup(df, 'Гарнир', 3)
+	markup.add(types.KeyboardButton("Вернуться к списку блюд"))
 	return markup
 
 def pizza():
-	markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=6)
-	btn1 = types.KeyboardButton('1')
-	btn2 = types.KeyboardButton('2')
-	btn3 = types.KeyboardButton('3')
-	btn4 = types.KeyboardButton('4')
-	btn5 = types.KeyboardButton('5')
-	btn6 = types.KeyboardButton('6')
-	btn7 = types.KeyboardButton('7')
-	btn8 = types.KeyboardButton('8')
-	btn9 = types.KeyboardButton('9')
-	btn10 = types.KeyboardButton('10')
-	btn11 = types.KeyboardButton('11')
-	btn12 = types.KeyboardButton('12')
-	btn13 = types.KeyboardButton("Вернуться к списку блюд")
-	markup.add(btn1, btn2, btn3, btn4, btn5, btn6, btn7, btn8, btn9, btn10, btn11, btn12)
-	markup.add(btn13)
+	markup = gen_markup(df, 'Пицца и хачапури из печи', 6)
+	markup.add(types.KeyboardButton("Вернуться к списку блюд"))
 	return markup
 
 def bakery():
-	markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=4)
-	btn1 = types.KeyboardButton('1')
-	btn2 = types.KeyboardButton('2')
-	btn3 = types.KeyboardButton('3')
-	btn4 = types.KeyboardButton('4')
-	btn5 = types.KeyboardButton('5')
-	btn6 = types.KeyboardButton('6')
-	btn7 = types.KeyboardButton('7')
-	btn8 = types.KeyboardButton("Вернуться к списку блюд")
-	markup.add(btn1, btn2, btn3, btn4, btn5, btn6, btn7)
-	markup.add(btn8)
+	markup = gen_markup(df, 'Выпечка', 4)
+	markup.add(types.KeyboardButton("Вернуться к списку блюд"))
 	return markup
 
 def desserts():
-	markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=4)
-	btn1 = types.KeyboardButton('1')
-	btn2 = types.KeyboardButton('2')
-	btn3 = types.KeyboardButton('3')
-	btn4 = types.KeyboardButton('4')
-	btn5 = types.KeyboardButton("Вернуться к списку блюд")
-	markup.add(btn1, btn2, btn3, btn4)
-	markup.add(btn5)
+	markup = gen_markup(df, 'Десерты', 4)
+	markup.add(types.KeyboardButton("Вернуться к списку блюд"))
 	return markup
 
 def drinks():
-	markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=3)
-	btn1 = types.KeyboardButton('1')
-	btn2 = types.KeyboardButton('2')
-	btn3 = types.KeyboardButton('3')
-	btn4 = types.KeyboardButton("Вернуться к списку блюд")
-	markup.add(btn1, btn2, btn3)
-	markup.add(btn4)
+	markup = gen_markup(df, 'Напитки', 3)
+	markup.add(types.KeyboardButton("Вернуться к списку блюд"))
 	return markup
 
 def lunchbox():
-	markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=3)
-	btn1 = types.KeyboardButton('1')
-	btn2 = types.KeyboardButton('2')
-	btn3 = types.KeyboardButton('3')
-	btn4 = types.KeyboardButton("Вернуться к списку блюд")
-	markup.add(btn1, btn2, btn3)
-	markup.add(btn4)
+	markup = gen_markup(df, 'Ланчбоксы', 3)
+	markup.add(types.KeyboardButton("Вернуться к списку блюд"))
 	return markup
 
 def make_order():
