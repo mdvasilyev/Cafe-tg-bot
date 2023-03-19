@@ -8,7 +8,8 @@ bot = AsyncTeleBot('6049022584:AAEK8QxoT9kN0E1LTYaNhKNz4NjDdTxIdok')
 order_list = {"плов из баранины": 0, "первое блюдо 1": 0}
 section_stack = []
 dish_stack = []
-admins = [1208161291]
+superadmin = [1208161291]
+admins = [1208161291, 659350346, 669249622]
 
 df = pd.read_excel('dishes.xlsx')
 test_df = pd.read_csv('Book1.csv')
@@ -56,6 +57,11 @@ async def phone(message):
 		send_mess = 'Вы админ'
 	else:
 		send_mess = 'Вы не админ'
+	await bot.send_message(message.chat.id, send_mess, parse_mode='html')
+
+@bot.message_handler(commands=['add'])
+async def phone(message):
+	send_mess = f'{message.from_user.id}'
 	await bot.send_message(message.chat.id, send_mess, parse_mode='html')
 
 def start_menu():
