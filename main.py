@@ -247,7 +247,7 @@ async def mess(message):
 			markup = desserts()
 		elif section_stack[0] == "напитки":
 			markup = drinks()
-		elif section_stack[0] == "ланчибоксы":
+		elif section_stack[0] == "ланчбоксы":
 			markup = lunchbox()
 		final_message = "Может что-нибудь другое?"
 	elif get_message_bot == "1 шт":
