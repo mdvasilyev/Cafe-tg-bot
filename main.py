@@ -5,13 +5,15 @@ from telebot.async_telebot import AsyncTeleBot
 from telebot import types
 
 bot = AsyncTeleBot('6049022584:AAEK8QxoT9kN0E1LTYaNhKNz4NjDdTxIdok')
-order_list = {"плов из баранины": 0, "первое блюдо 1": 0}
+n_of_dishes = range(1, 21)
+order_list = {}
 section_stack = []
 dish_stack = []
 superadmin = [1208161291]
 admins = [1208161291, 659350346, 669249622]
 
 df = pd.read_excel('dishes.xlsx')
+max_dish = len(df)
 test_df = pd.read_csv('Book1.csv')
 
 @bot.message_handler(commands=['test'])
@@ -143,11 +145,9 @@ def make_order():
 	markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
 	btn1 = types.KeyboardButton('Добавить в заказ')
 	btn2 = types.KeyboardButton('Не добавлять в заказ')
-	btn3 = types.KeyboardButton('Вернуться ко вторым блюдам')
-	btn4 = types.KeyboardButton('Вернуться к списку блюд')
+	btn3 = types.KeyboardButton('Вернуться к списку блюд')
 	markup.add(btn1, btn2)
 	markup.add(btn3)
-	markup.add(btn4)
 	return markup
 
 def number_of_dishes():
@@ -218,7 +218,7 @@ async def mess(message):
 			section_stack.pop(0)
 		markup = lunchbox()
 		final_message = gen_menu(df, 'Ланчбоксы')
-	elif get_message_bot == "1":
+	elif int(get_message_bot) in range(1, max_dish + 1):
 		dish_stack.append("плов из баранины")
 		if len(dish_stack) != 1:
 			dish_stack.pop(0)
@@ -250,12 +250,9 @@ async def mess(message):
 		elif section_stack[0] == "ланчбоксы":
 			markup = lunchbox()
 		final_message = "Может что-нибудь другое?"
-	elif get_message_bot == "1 шт":
-		order_list[dish_stack[0]] += 1
-		markup = start_menu()
-		final_message = "Отличный выбор"
-	elif get_message_bot == "2 шт":
-		order_list[dish_stack[0]] += 2
+	elif "шт" in get_message_bot:
+		number = get_message_bot.replace('шт', '')
+		order_list[dish_stack[0]] += number
 		markup = start_menu()
 		final_message = "Отличный выбор"
 	elif get_message_bot == "завершить заказ":
