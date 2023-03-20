@@ -8,6 +8,7 @@ bot = AsyncTeleBot('6049022584:AAEK8QxoT9kN0E1LTYaNhKNz4NjDdTxIdok')
 n_of_dishes = range(1, 21)
 order_list = {}
 section_stack = []
+dish_stack = []
 superadmin = [1208161291]
 admins = [1208161291, 659350346, 669249622]
 
@@ -93,51 +94,6 @@ def gen_markup(dframe, dish: str):
 	r_width = len(l) // 2 + len(l) % 2
 	markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=r_width)
 	markup.add(*[types.KeyboardButton(f'{i + 1}') for i in range(len(l))])
-	return markup
-
-def salads():
-	markup = gen_markup(df, 'Салаты')
-	markup.add(types.KeyboardButton("Вернуться к списку блюд"))
-	return markup
-
-def soups():
-	markup = gen_markup(df, 'Супы')
-	markup.add(types.KeyboardButton("Вернуться к списку блюд"))
-	return markup
-
-def main_course():
-	markup = gen_markup(df, 'Горячее')
-	markup.add(types.KeyboardButton("Вернуться к списку блюд"))
-	return markup
-
-def garnish():
-	markup = gen_markup(df, 'Гарнир')
-	markup.add(types.KeyboardButton("Вернуться к списку блюд"))
-	return markup
-
-def pizza():
-	markup = gen_markup(df, 'Пицца и хачапури из печи')
-	markup.add(types.KeyboardButton("Вернуться к списку блюд"))
-	return markup
-
-def bakery():
-	markup = gen_markup(df, 'Выпечка')
-	markup.add(types.KeyboardButton("Вернуться к списку блюд"))
-	return markup
-
-def desserts():
-	markup = gen_markup(df, 'Десерты')
-	markup.add(types.KeyboardButton("Вернуться к списку блюд"))
-	return markup
-
-def drinks():
-	markup = gen_markup(df, 'Напитки')
-	markup.add(types.KeyboardButton("Вернуться к списку блюд"))
-	return markup
-
-def lunchbox():
-	markup = gen_markup(df, 'Ланчбоксы')
-	markup.add(types.KeyboardButton("Вернуться к списку блюд"))
 	return markup
 
 def make_order():
