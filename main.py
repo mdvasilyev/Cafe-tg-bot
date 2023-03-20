@@ -35,7 +35,7 @@ async def setup_bot_commands():
 @bot.message_handler(commands=['start'])
 async def start(message):
 	markup = start_menu()
-	send_mess = f"Привет, <b>{message.from_user.first_name} {message.from_user.last_name}</b>!\nЯ бот, который поможет " \
+	send_mess = f"Привет, <b>{message.from_user.first_name}</b>!\nЯ бот, который поможет " \
 				f"тебе сделать заказ"
 	await bot.send_message(message.chat.id, send_mess, parse_mode='html', reply_markup=markup)
 
