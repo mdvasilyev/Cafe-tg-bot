@@ -8,7 +8,6 @@ bot = AsyncTeleBot('6049022584:AAEK8QxoT9kN0E1LTYaNhKNz4NjDdTxIdok')
 n_of_dishes = range(1, 21)
 order_list = {}
 section_stack = []
-dish_stack = []
 superadmin = [1208161291]
 admins = [1208161291, 659350346, 669249622]
 
@@ -164,64 +163,15 @@ async def mess(message):
 	if get_message_bot == "вернуться к списку блюд":
 		markup = start_menu()
 		final_message = "Хочешь выбрать что-то ещё?"
-	elif get_message_bot == "салаты":
-		section_stack.append("салаты")
+	elif get_message_bot.capitalize() in df.iloc[:0]:
+		section_stack.append(get_message_bot)
 		if len(section_stack) != 1:
 			section_stack.pop(0)
-		markup = salads()
-		final_message = gen_menu(df, 'Салаты')
-	elif get_message_bot == "супы":
-		section_stack.append("супы")
-		if len(section_stack) != 1:
-			section_stack.pop(0)
-		markup = soups()
-		final_message = gen_menu(df, 'Супы')
-	elif get_message_bot == "горячее":
-		section_stack.append("горячее")
-		if len(section_stack) != 1:
-			section_stack.pop(0)
-		markup = main_course()
-		final_message = gen_menu(df, 'Горячее')
-	elif get_message_bot == "гарнир":
-		section_stack.append("гарнир")
-		if len(section_stack) != 1:
-			section_stack.pop(0)
-		markup = garnish()
-		final_message = gen_menu(df, 'Гарнир')
-	elif get_message_bot == "пицца и хачапури из печи":
-		section_stack.append("пицца и хачапури из печи")
-		if len(section_stack) != 1:
-			section_stack.pop(0)
-		markup = pizza()
-		final_message = gen_menu(df, 'Пицца и хачапури из печи')
-	elif get_message_bot == "выпечка":
-		section_stack.append("выпечка")
-		if len(section_stack) != 1:
-			section_stack.pop(0)
-		markup = bakery()
-		final_message = gen_menu(df, 'Выпечка')
-	elif get_message_bot == "десерты":
-		section_stack.append("десерты")
-		if len(section_stack) != 1:
-			section_stack.pop(0)
-		markup = desserts()
-		final_message = gen_menu(df, 'Десерты')
-	elif get_message_bot == "напитки":
-		section_stack.append("напитки")
-		if len(section_stack) != 1:
-			section_stack.pop(0)
-		markup = drinks()
-		final_message = gen_menu(df, 'Напитки')
-	elif get_message_bot == "ланчбоксы":
-		section_stack.append("ланчбоксы")
-		if len(section_stack) != 1:
-			section_stack.pop(0)
-		markup = lunchbox()
-		final_message = gen_menu(df, 'Ланчбоксы')
+		markup = gen_markup(df, get_message_bot.capitalize())
+		markup.add(types.KeyboardButton("Вернуться к списку блюд"))
+		final_message = gen_menu(df, get_message_bot.capitalize())
 	elif int(get_message_bot) in range(1, max_dish + 1):
-		dish_stack.append("плов из баранины")
-		if len(dish_stack) != 1:
-			dish_stack.pop(0)
+		order_list[section_stack] 
 		markup = make_order()
 		final_message = "Добавляем в заказ?"
 	elif get_message_bot == "добавить в заказ":
@@ -231,24 +181,8 @@ async def mess(message):
 		markup = start_menu()
 		final_message = "Может что-нибудь другое?"
 	elif get_message_bot == "отмена":
-		if section_stack[0] == "салаты":
-			markup = salads()
-		elif section_stack[0] == "супы":
-			markup = soups()
-		elif section_stack[0] == "горячее":
-			markup = main_course()
-		elif section_stack[0] == "гарнир":
-			markup = garnish()
-		elif section_stack[0] == "пицца и хачапури из печи":
-			markup = pizza()
-		elif section_stack[0] == "выпечка":
-			markup = bakery()
-		elif section_stack[0] == "десерты":
-			markup = desserts()
-		elif section_stack[0] == "напитки":
-			markup = drinks()
-		elif section_stack[0] == "ланчбоксы":
-			markup = lunchbox()
+		markup = gen_markup(df, section_stack[0].capitalize())
+		markup.add(types.KeyboardButton("Вернуться к списку блюд"))
 		final_message = "Может что-нибудь другое?"
 	elif "шт" in get_message_bot:
 		number = get_message_bot.replace('шт', '')
