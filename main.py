@@ -1,4 +1,5 @@
 import pandas as pd
+import re
 import telebot
 import asyncio
 from telebot.async_telebot import AsyncTeleBot
@@ -6,6 +7,7 @@ from telebot import types
 
 bot = AsyncTeleBot('6049022584:AAEK8QxoT9kN0E1LTYaNhKNz4NjDdTxIdok')
 n_of_dishes = range(1, 21)
+order = []
 order_list = {}
 section_stack = []
 dish_stack = []
@@ -127,6 +129,9 @@ async def mess(message):
 	elif len(get_message_bot) <= 2 and int(get_message_bot) in range(1, max_dish + 1):
 		dish = df[section_stack[0]][int(get_message_bot) - 1]
 		order_list[dish] = 0
+		dish_stack.append(dish)
+		if len(dish_stack) != 1:
+			dish_stack.pop(0)
 		markup = make_order()
 		final_message = f"{dish}\nДобавляем в заказ?"
 	elif get_message_bot == "Добавить в заказ":
@@ -137,13 +142,18 @@ async def mess(message):
 		markup.add(types.KeyboardButton("Вернуться к списку блюд"))
 		final_message = "Может что-нибудь другое?"
 	elif "шт" in get_message_bot:
-		number = get_message_bot.replace('шт', '')
+		number = int(get_message_bot.replace('шт', ''))
 		order_list[dish_stack[0]] += number
 		markup = start_menu()
 		final_message = "Отличный выбор"
 	elif get_message_bot == "Завершить заказ":
 		markup = start_menu()
-		text = f"{[[i, order_list[i]] for i in order_list if order_list[i] != 0]}"
+		price = 0
+		for i, j in order_list.items():
+			if j != 0:
+				price += int(re.search(r', (\d+?)р.', i).group()[2:-2]) * j
+				order.append(' '.join([i, f'\t\t{str(j)} шт']))
+		text = '\n'.join(order) + f'\nИтого: {price}р.'
 		final_message = f"Вы заказали:\n{text}"
 	else:
 		markup = start_menu()
