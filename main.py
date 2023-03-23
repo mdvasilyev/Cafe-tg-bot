@@ -115,29 +115,29 @@ def number_of_dishes():
 
 @bot.message_handler(content_types=['text'])
 async def mess(message):
-	get_message_bot = message.text.strip().lower()
-	if get_message_bot == "вернуться к списку блюд":
+	get_message_bot = message.text.strip()
+	if get_message_bot == "Вернуться к списку блюд":
 		markup = start_menu()
 		final_message = "Хочешь выбрать что-то ещё?"
-	elif get_message_bot.capitalize() in df.iloc[:0]:
+	elif get_message_bot in df.iloc[:0]:
 		section_stack.append(get_message_bot)
 		if len(section_stack) != 1:
 			section_stack.pop(0)
-		markup = gen_markup(df, get_message_bot.capitalize())
+		markup = gen_markup(df, get_message_bot)
 		markup.add(types.KeyboardButton("Вернуться к списку блюд"))
-		final_message = gen_menu(df, get_message_bot.capitalize())
+		final_message = gen_menu(df, get_message_bot)
 	elif int(get_message_bot) in range(1, max_dish + 1):
 		order_list[section_stack] 
 		markup = make_order()
 		final_message = "Добавляем в заказ?"
-	elif get_message_bot == "добавить в заказ":
+	elif get_message_bot == "Добавить в заказ":
 		markup = number_of_dishes()
 		final_message = "Выберите количество"
-	elif get_message_bot == "не добавлять в заказ":
+	elif get_message_bot == "Не добавлять в заказ":
 		markup = start_menu()
 		final_message = "Может что-нибудь другое?"
-	elif get_message_bot == "отмена":
-		markup = gen_markup(df, section_stack[0].capitalize())
+	elif get_message_bot == "Отмена":
+		markup = gen_markup(df, section_stack[0])
 		markup.add(types.KeyboardButton("Вернуться к списку блюд"))
 		final_message = "Может что-нибудь другое?"
 	elif "шт" in get_message_bot:
@@ -145,9 +145,9 @@ async def mess(message):
 		order_list[dish_stack[0]] += number
 		markup = start_menu()
 		final_message = "Отличный выбор"
-	elif get_message_bot == "завершить заказ":
+	elif get_message_bot == "Завершить заказ":
 		markup = start_menu()
-		text = f"{[[i.capitalize(), order_list[i]] for i in order_list if order_list[i] != 0]}"
+		text = f"{[[i, order_list[i]] for i in order_list if order_list[i] != 0]}"
 		final_message = f"Вы заказали:\n{text}"
 	else:
 		markup = start_menu()
