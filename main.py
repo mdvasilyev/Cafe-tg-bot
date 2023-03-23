@@ -99,7 +99,7 @@ def gen_markup(dframe, dish: str):
 def make_order():
 	markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
 	btn1 = types.KeyboardButton('Добавить в заказ')
-	btn2 = types.KeyboardButton('Не добавлять в заказ')
+	btn2 = types.KeyboardButton('Отмена')
 	btn3 = types.KeyboardButton('Вернуться к списку блюд')
 	markup.add(btn1, btn2)
 	markup.add(btn3)
@@ -107,7 +107,7 @@ def make_order():
 
 def number_of_dishes():
 	markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=3)
-	markup.add(*[types.KeyboardButton(f'{i + 1}') for i in range(len(6))])
+	markup.add(*[types.KeyboardButton(f'{i + 1} шт') for i in range(6)])
 	markup.add(types.KeyboardButton('Отмена'))
 	return markup
 
@@ -124,16 +124,14 @@ async def mess(message):
 		markup = gen_markup(df, get_message_bot)
 		markup.add(types.KeyboardButton("Вернуться к списку блюд"))
 		final_message = gen_menu(df, get_message_bot)
-	elif int(get_message_bot) in range(1, max_dish + 1):
-		order_list[df[section_stack[0]][int(get_message_bot) - 1]] = 0
+	elif len(get_message_bot) <= 2 and int(get_message_bot) in range(1, max_dish + 1):
+		dish = df[section_stack[0]][int(get_message_bot) - 1]
+		order_list[dish] = 0
 		markup = make_order()
-		final_message = "Добавляем в заказ?"
+		final_message = f"{dish}\nДобавляем в заказ?"
 	elif get_message_bot == "Добавить в заказ":
 		markup = number_of_dishes()
 		final_message = "Выберите количество"
-	elif get_message_bot == "Не добавлять в заказ":
-		markup = start_menu()
-		final_message = "Может что-нибудь другое?"
 	elif get_message_bot == "Отмена":
 		markup = gen_markup(df, section_stack[0])
 		markup.add(types.KeyboardButton("Вернуться к списку блюд"))
