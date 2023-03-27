@@ -31,6 +31,7 @@ async def send_text(message):
 async def setup_bot_commands():
 	bot_commands = [
 		telebot.types.BotCommand("/start", "main menu"),
+		telebot.types.BotCommand("/menu", "display entire menu"),
 		telebot.types.BotCommand("/vk", "link to vk"),
 		telebot.types.BotCommand("/phone", "call us via phone")
 	]
@@ -42,6 +43,14 @@ async def start(message):
 	send_mess = f"Привет, <b>{message.from_user.first_name}</b>!\nЯ бот, который поможет " \
 				f"тебе сделать заказ"
 	await bot.send_message(message.chat.id, send_mess, parse_mode='html', reply_markup=markup)
+
+@bot.message_handler(commands=['menu'])
+async def menu(message):
+	markup = start_menu()
+	send_mess = 'priv'
+	await bot.send_message(message.chat.id, send_mess, parse_mode='html', reply_markup=markup)
+	await bot.send_message(message.chat.id, send_mess, parse_mode='html', reply_markup=markup)
+
 
 @bot.message_handler(commands=['vk'])
 async def vk(message):
