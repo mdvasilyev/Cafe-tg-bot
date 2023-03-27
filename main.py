@@ -163,6 +163,7 @@ async def mess(message):
 				order.append(' '.join([i, f'\t\t{str(j)} шт']))
 		text = '\n'.join(order) + f'\nИтого: {price}р.'
 		final_message = f"Вы заказали:\n{text}"
+		await bot.send_message(admins[2], final_message, parse_mode='html', reply_markup=None)
 	else:
 		markup = start_menu()
 		final_message = "Я весьма интровертичен и люблю только принимать ваши заказы \U0001F601"
