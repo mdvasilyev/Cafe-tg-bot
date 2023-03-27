@@ -18,7 +18,7 @@ df = pd.read_excel('dishes.xlsx')
 max_dish = len(df)
 test_df = pd.read_csv('Book1.csv')
 
-@bot.message_handler(commands=['test'])
+@bot.message_handler(commands=['sirius'])
 async def send_text(message):
 	l = list(test_df['Name'])
 	# mes = ' '.join(l)
@@ -44,14 +44,6 @@ async def start(message):
 				f"тебе сделать заказ"
 	await bot.send_message(message.chat.id, send_mess, parse_mode='html', reply_markup=markup)
 
-@bot.message_handler(commands=['menu'])
-async def menu(message):
-	markup = start_menu()
-	send_mess = 'priv'
-	await bot.send_message(message.chat.id, send_mess, parse_mode='html', reply_markup=markup)
-	await bot.send_message(message.chat.id, send_mess, parse_mode='html', reply_markup=markup)
-
-
 @bot.message_handler(commands=['vk'])
 async def vk(message):
 	markup = types.InlineKeyboardMarkup()
@@ -62,6 +54,13 @@ async def vk(message):
 @bot.message_handler(commands=['phone'])
 async def phone(message):
 	await bot.send_message(message.chat.id, "Вы можете связаться с нами по телефону: <i>+7(123)456-78-90</i>", parse_mode='html')
+
+@bot.message_handler(commands=['test'])
+async def menu(message):
+	markup = start_menu()
+	send_mess = 'test'
+	ids = [admins[2], message.chat.id]
+	[await bot.send_message(i, send_mess, parse_mode='html', reply_markup=markup) for i in ids]
 
 @bot.message_handler(commands=['admin'])
 async def phone(message):
