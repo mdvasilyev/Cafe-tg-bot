@@ -160,10 +160,12 @@ async def mess(message):
 		for i, j in order_list.items():
 			if j != 0:
 				price += int(re.search(r', (\d+?)р.', i).group()[2:-2]) * j
-				order.append(' '.join([i, f'\t\t{str(j)} шт']))
+				part_to_remove = re.search(r'\d+. ', i).group()
+				order.append(' '.join([i.replace(part_to_remove, ''), f'\t\t{str(j)} шт']))
 		text = '\n'.join(order) + f'\nИтого: {price}р.'
 		final_message = f"Вы заказали:\n{text}"
-		await bot.send_message(admins[2], final_message, parse_mode='html', reply_markup=None)
+		order.clear()
+		await bot.send_message(admins[0], final_message, parse_mode='html', reply_markup=None)
 	else:
 		markup = start_menu()
 		final_message = "Я весьма интровертичен и люблю только принимать ваши заказы \U0001F601"
