@@ -38,11 +38,12 @@ class MyStates(StatesGroup):
 # 	await bot.send_message(message.chat.id, f"{mes}")
 
 async def setup_bot_commands():
+	await bot.delete_my_commands()
 	bot_commands = [
-		telebot.types.BotCommand("/start", "main menu"),
-		telebot.types.BotCommand("/menu", "display entire menu"),
-		telebot.types.BotCommand("/vk", "link to vk"),
-		telebot.types.BotCommand("/phone", "call us via phone")
+		telebot.types.BotCommand("/start", "Начальная страница"),
+		telebot.types.BotCommand("/address", "Ввести адрес и оплату"),
+		telebot.types.BotCommand("/vk", "Ссылка на группу ВК"),
+		telebot.types.BotCommand("/phone", "Номер телефона")
 	]
 	await bot.set_my_commands(bot_commands)
 
@@ -191,9 +192,13 @@ async def mess(message):
 				part_to_remove = re.search(r'\d+. ', i).group()
 				order.append(' '.join([i.replace(part_to_remove, ''), f'{str(j)} шт']))
 		text = '\n'.join(order) + f'\n<b>Итого:</b> {price}р.'
-		final_message = '\n'.join(["<b>Заказ:</b>", f"{text}", "<b>Адрес и форма оплаты:</b>", adrs[0]])
-		order.clear()
-		await bot.send_message(admins[0], final_message, parse_mode='html', reply_markup=admin_markup)
+		if len(order) != 0 and len(adrs) != 0:
+			final_message = '\n'.join(["<b>Заказ:</b>", f"{text}", "<b>Адрес и форма оплаты:</b>", adrs[0]])
+			order_list.clear()
+			order.clear()
+			await bot.send_message(admins[0], final_message, parse_mode='html', reply_markup=admin_markup)
+		else:
+			final_message = "Проверьте, что вы добавили блюда и указали адрес доставки"
 	else:
 		markup = start_menu()
 		final_message = "Я весьма интровертичен и люблю только принимать ваши заказы \U0001F601"
