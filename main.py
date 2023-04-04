@@ -15,6 +15,7 @@ order_list = {}
 section_stack = []
 dish_stack = []
 adrs = []
+user = []
 
 superadmin = [1208161291]
 admins = [1208161291, 659350346, 669249622]
@@ -96,6 +97,11 @@ async def phone(message):
 	send_mess = f'{message.from_user.id}'
 	await bot.send_message(message.chat.id, send_mess, parse_mode='html')
 
+@bot.callback_query_handler(func=lambda call: True)
+async def callback_inline(call):
+	if call.data == 'order_checkbox':
+		await bot.send_message(user[0], "Ваш заказ передан курьеру", parse_mode='html')
+
 def start_menu():
 	markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=3)
 	btn1 = types.KeyboardButton('Салаты')
@@ -143,6 +149,8 @@ def number_of_dishes():
 
 @bot.message_handler(content_types=['text'])
 async def mess(message):
+	user.clear()
+	user.append(message.chat.id)
 	get_message_bot = message.text.strip()
 	if get_message_bot == "Вернуться к списку блюд":
 		markup = start_menu()
@@ -174,6 +182,8 @@ async def mess(message):
 		final_message = "Отличный выбор"
 	elif get_message_bot == "Завершить заказ":
 		markup = start_menu()
+		admin_markup = types.InlineKeyboardMarkup()
+		admin_markup.add(types.InlineKeyboardButton("Заказ отдан курьеру", callback_data="order_checkbox"))
 		price = 0
 		for i, j in order_list.items():
 			if j != 0:
@@ -181,9 +191,9 @@ async def mess(message):
 				part_to_remove = re.search(r'\d+. ', i).group()
 				order.append(' '.join([i.replace(part_to_remove, ''), f'{str(j)} шт']))
 		text = '\n'.join(order) + f'\n<b>Итого:</b> {price}р.'
-		final_message = '\n'.join(["<b>Вы заказали:</b>", f"{text}", "<b>Адрес и форма оплаты:</b>", adrs[0]])
+		final_message = '\n'.join(["<b>Заказ:</b>", f"{text}", "<b>Адрес и форма оплаты:</b>", adrs[0]])
 		order.clear()
-		await bot.send_message(admins[0], final_message, parse_mode='html', reply_markup=None)
+		await bot.send_message(admins[0], final_message, parse_mode='html', reply_markup=admin_markup)
 	else:
 		markup = start_menu()
 		final_message = "Я весьма интровертичен и люблю только принимать ваши заказы \U0001F601"
