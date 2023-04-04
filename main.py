@@ -180,7 +180,7 @@ async def mess(message):
 		number = int(get_message_bot.replace('шт', ''))
 		order_list[dish_stack[0]] += number
 		markup = start_menu()
-		final_message = "Отличный выбор"
+		final_message = "Отличный выбор \U0001F44D"
 	elif get_message_bot == "Завершить заказ":
 		markup = start_menu()
 		admin_markup = types.InlineKeyboardMarkup()
@@ -191,17 +191,17 @@ async def mess(message):
 				price += int(re.search(r', (\d+?)р.', i).group()[2:-2]) * j
 				part_to_remove = re.search(r'\d+. ', i).group()
 				order.append(' '.join([i.replace(part_to_remove, ''), f'{str(j)} шт']))
-		text = '\n'.join(order) + f'\n<b>Итого:</b> {price}р.'
+		text = '\n'.join(order) + f'\n\U0001F4B0<b>Итого:</b> {price}р.'
 		if len(order) != 0 and len(adrs) != 0:
-			final_message = '\n'.join(["<b>Заказ:</b>", f"{text}", "<b>Адрес и форма оплаты:</b>", adrs[0]])
+			final_message = '\n'.join(["\U0001F37D <b>Заказ:</b>", f"{text}", "\U0001F4CD <b>Адрес и форма оплаты:</b>", adrs[0]])
 			order_list.clear()
 			order.clear()
 			await bot.send_message(admins[0], final_message, parse_mode='html', reply_markup=admin_markup)
 		else:
-			final_message = "Проверьте, что вы добавили блюда и указали адрес доставки"
+			final_message = "\U000026A0 Проверьте, что вы добавили блюда и указали адрес доставки"
 	else:
 		markup = start_menu()
-		final_message = "Я весьма интровертичен и люблю только принимать ваши заказы \U0001F601"
+		final_message = "Для совершения заказа пользуйтесь предлагаемыми кнопками \U0001F601"
 	await bot.send_message(message.chat.id, final_message, parse_mode='html', reply_markup=markup)
 
 bot.add_custom_filter(asyncio_filters.StateFilter(bot))
