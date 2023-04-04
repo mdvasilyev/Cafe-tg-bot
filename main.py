@@ -1,16 +1,21 @@
 import pandas as pd
 import re
 import telebot
+from telebot import asyncio_filters
 import asyncio
 from telebot.async_telebot import AsyncTeleBot
+from telebot.asyncio_storage import StateMemoryStorage
+from telebot.asyncio_handler_backends import State, StatesGroup
 from telebot import types
 
-bot = AsyncTeleBot('6049022584:AAEK8QxoT9kN0E1LTYaNhKNz4NjDdTxIdok')
-n_of_dishes = range(1, 21)
+bot = AsyncTeleBot('6049022584:AAEK8QxoT9kN0E1LTYaNhKNz4NjDdTxIdok', state_storage=StateMemoryStorage())
+
 order = []
 order_list = {}
 section_stack = []
 dish_stack = []
+adrs = []
+
 superadmin = [1208161291]
 admins = [1208161291, 659350346, 669249622]
 
@@ -18,15 +23,18 @@ df = pd.read_excel('dishes.xlsx')
 max_dish = len(df)
 test_df = pd.read_csv('Book1.csv')
 
-@bot.message_handler(commands=['sirius'])
-async def send_text(message):
-	l = list(test_df['Name'])
-	# mes = ' '.join(l)
-	mes = '\n'.join(l)
-	# indexes = list(~pd.isna(df['Салаты']))
-	# slds = df['Салаты'][indexes]
-	# mes = '\n'.join(slds)
-	await bot.send_message(message.chat.id, f"{mes}")
+class MyStates(StatesGroup):
+	address = State()
+
+# @bot.message_handler(commands=['sirius'])
+# async def send_text(message):
+# 	l = list(test_df['Name'])
+# 	# mes = ' '.join(l)
+# 	mes = '\n'.join(l)
+# 	# indexes = list(~pd.isna(df['Салаты']))
+# 	# slds = df['Салаты'][indexes]
+# 	# mes = '\n'.join(slds)
+# 	await bot.send_message(message.chat.id, f"{mes}")
 
 async def setup_bot_commands():
 	bot_commands = [
@@ -55,12 +63,24 @@ async def vk(message):
 async def phone(message):
 	await bot.send_message(message.chat.id, "Вы можете связаться с нами по телефону: <i>+7(123)456-78-90</i>", parse_mode='html')
 
-@bot.message_handler(commands=['test'])
-async def menu(message):
-	markup = start_menu()
-	send_mess = 'test'
-	ids = [admins[2], message.chat.id]
-	[await bot.send_message(i, send_mess, parse_mode='html', reply_markup=markup) for i in ids]
+@bot.message_handler(commands=['address'])
+async def address(message):
+    await bot.set_state(message.from_user.id, MyStates.address, message.chat.id)
+    await bot.send_message(message.chat.id, 'Напишите адрес и форму оплаты')
+
+@bot.message_handler(state=MyStates.address)
+async def address_get(message):
+	adrs.clear()
+	adrs.append(str(message.text))
+	await bot.send_message(message.chat.id, "Записал ваш адрес и форму оплаты:\n<b>{address}</b>".format(address=adrs[0]), parse_mode="html")
+	await bot.delete_state(message.from_user.id, message.chat.id)
+
+# @bot.message_handler(commands=['test'])
+# async def menu(message):
+# 	markup = start_menu()
+# 	send_mess = 'test'
+# 	ids = [admins[2], message.chat.id]
+# 	[await bot.send_message(i, send_mess, parse_mode='html', reply_markup=markup) for i in ids]
 
 @bot.message_handler(commands=['admin'])
 async def phone(message):
@@ -128,18 +148,16 @@ async def mess(message):
 		markup = start_menu()
 		final_message = "Хочешь выбрать что-то ещё?"
 	elif get_message_bot in df.iloc[:0]:
+		section_stack.clear()
 		section_stack.append(get_message_bot)
-		if len(section_stack) != 1:
-			section_stack.pop(0)
 		markup = gen_markup(df, get_message_bot)
 		markup.add(types.KeyboardButton("Вернуться к списку блюд"))
 		final_message = gen_menu(df, get_message_bot)
 	elif len(get_message_bot) <= 2 and int(get_message_bot) in range(1, max_dish + 1):
 		dish = df[section_stack[0]][int(get_message_bot) - 1]
 		order_list[dish] = 0
+		dish_stack.clear()
 		dish_stack.append(dish)
-		if len(dish_stack) != 1:
-			dish_stack.pop(0)
 		markup = make_order()
 		final_message = f"{dish}\nДобавляем в заказ?"
 	elif get_message_bot == "Добавить в заказ":
@@ -161,14 +179,16 @@ async def mess(message):
 			if j != 0:
 				price += int(re.search(r', (\d+?)р.', i).group()[2:-2]) * j
 				part_to_remove = re.search(r'\d+. ', i).group()
-				order.append(' '.join([i.replace(part_to_remove, ''), f'\t\t{str(j)} шт']))
-		text = '\n'.join(order) + f'\nИтого: {price}р.'
-		final_message = f"Вы заказали:\n{text}"
+				order.append(' '.join([i.replace(part_to_remove, ''), f'{str(j)} шт']))
+		text = '\n'.join(order) + f'\n<b>Итого:</b> {price}р.'
+		final_message = '\n'.join(["<b>Вы заказали:</b>", f"{text}", "<b>Адрес и форма оплаты:</b>", adrs[0]])
 		order.clear()
 		await bot.send_message(admins[0], final_message, parse_mode='html', reply_markup=None)
 	else:
 		markup = start_menu()
 		final_message = "Я весьма интровертичен и люблю только принимать ваши заказы \U0001F601"
 	await bot.send_message(message.chat.id, final_message, parse_mode='html', reply_markup=markup)
+
+bot.add_custom_filter(asyncio_filters.StateFilter(bot))
 
 asyncio.run(bot.polling())
