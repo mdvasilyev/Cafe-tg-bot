@@ -72,9 +72,12 @@ async def address(message):
 
 @bot.message_handler(state=MyStates.address)
 async def address_get(message):
+	markup = start_menu()
 	adrs.clear()
 	adrs.append(str(message.text))
-	await bot.send_message(message.chat.id, "Записал ваш адрес и форму оплаты:\n<b>{address}</b>".format(address=adrs[0]), parse_mode="html")
+	await bot.send_message(message.chat.id, "Записал ваш адрес и форму оплаты:\n<b>{address}</b>\nМожете продолжить "
+											"оформление заказа или завершить его".format(address=adrs[0]),
+						   parse_mode="html", reply_markup=markup)
 	await bot.delete_state(message.from_user.id, message.chat.id)
 
 # @bot.message_handler(commands=['test'])
@@ -113,9 +116,9 @@ def start_menu():
 	btn6 = types.KeyboardButton('Выпечка')
 	btn7 = types.KeyboardButton('Десерты')
 	btn8 = types.KeyboardButton('Напитки')
-	btn9 = types.KeyboardButton('Ланчбоксы')
+	# btn9 = types.KeyboardButton('Ланчбоксы')
 	btn10 = types.KeyboardButton('Завершить заказ')
-	markup.add(btn1, btn2, btn3, btn4, btn5, btn6, btn7, btn8, btn9)
+	markup.add(btn1, btn2, btn3, btn4, btn5, btn6, btn7, btn8)
 	markup.add(btn10)
 	return markup
 
@@ -191,17 +194,17 @@ async def mess(message):
 				price += int(re.search(r', (\d+?)р.', i).group()[2:-2]) * j
 				part_to_remove = re.search(r'\d+. ', i).group()
 				order.append(' '.join([i.replace(part_to_remove, ''), f'{str(j)} шт']))
-		text = '\n'.join(order) + f'\n\U0001F4B0<b>Итого:</b> {price}р.'
+		text = '\n'.join(order) + f'\n\U0001F4B0<b>Итого (без упаковки):</b> {price}р.'
 		if len(order) != 0 and len(adrs) != 0:
 			final_message = '\n'.join(["\U0001F37D <b>Заказ:</b>", f"{text}", "\U0001F4CD <b>Адрес и форма оплаты:</b>", adrs[0]])
 			order_list.clear()
 			order.clear()
 			await bot.send_message(admins[0], final_message, parse_mode='html', reply_markup=admin_markup)
 		else:
-			final_message = "\U000026A0 Проверьте, что вы добавили блюда и указали адрес доставки"
+			final_message = "\U000026A0 Проверьте, что вы добавили блюда и указали адрес доставки (/address)"
 	else:
 		markup = start_menu()
-		final_message = "Для совершения заказа пользуйтесь предлагаемыми кнопками \U0001F601"
+		final_message = "Для совершения заказа пользуйтесь предлагаемыми кнопками и меню \U0001F601"
 	await bot.send_message(message.chat.id, final_message, parse_mode='html', reply_markup=markup)
 
 bot.add_custom_filter(asyncio_filters.StateFilter(bot))
