@@ -1,12 +1,24 @@
 import pandas as pd
 import re
+import asyncio
+import psycopg2
 import telebot
 from telebot import asyncio_filters
-import asyncio
 from telebot.async_telebot import AsyncTeleBot
 from telebot.asyncio_storage import StateMemoryStorage
 from telebot.asyncio_handler_backends import State, StatesGroup
 from telebot import types
+
+con = psycopg2.connect(
+    database='postgres',
+    user='postgres',
+    password='postgres',
+    host='localhost',
+    port='5432'
+)
+cursor_obj = con.cursor()
+cursor_obj.execute("SELECT * FROM canteen")
+result = cursor_obj.fetchall()
 
 bot = AsyncTeleBot('6049022584:AAEK8QxoT9kN0E1LTYaNhKNz4NjDdTxIdok', state_storage=StateMemoryStorage())
 
@@ -79,12 +91,9 @@ async def address_get(message):
     await bot.delete_state(message.from_user.id, message.chat.id)
 
 
-# @bot.message_handler(commands=['test'])
-# async def menu(message):
-# 	markup = start_menu()
-# 	send_mess = 'test'
-# 	ids = [admins[2], message.chat.id]
-# 	[await bot.send_message(i, send_mess, parse_mode='html', reply_markup=markup) for i in ids]
+@bot.message_handler(commands=['test'])
+async def menu(message):
+	await bot.send_message(message.chat.id, result, parse_mode='html')
 
 @bot.message_handler(commands=['admin'])
 async def admin(message):
