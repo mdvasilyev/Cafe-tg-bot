@@ -93,7 +93,11 @@ async def address_get(message):
 
 @bot.message_handler(commands=['test'])
 async def menu(message):
-	await bot.send_message(message.chat.id, result, parse_mode='html')
+    cursor_obj.execute(f"insert into canteen(user_id, address) values ({message.from_user.id + 1}, 'test'); select * from canteen;")
+    # cursor_obj.execute("delete from canteen where address = 'test'; select * from canteen")
+    result = cursor_obj.fetchall()
+    con.commit()
+    await bot.send_message(message.chat.id, result, parse_mode='html')
 
 @bot.message_handler(commands=['admin'])
 async def admin(message):
