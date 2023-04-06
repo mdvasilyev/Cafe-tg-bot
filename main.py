@@ -17,24 +17,20 @@ con = psycopg2.connect(
     port='5432'
 )
 cursor_obj = con.cursor()
-cursor_obj.execute("SELECT * FROM canteen")
-result = cursor_obj.fetchall()
 
 bot = AsyncTeleBot('6049022584:AAEK8QxoT9kN0E1LTYaNhKNz4NjDdTxIdok', state_storage=StateMemoryStorage())
 
-order = []
-order_list = {}
-section_stack = []
-dish_stack = []
-adrs = []
+# order = []
+# order_list = {}
+# section_stack = []
+# dish_stack = []
+# adrs = []
 user = []
 
-superadmin = [1208161291]
 admins = [1208161291, 659350346, 669249622]
 
 df = pd.read_excel('dishes.xlsx')
 max_dish = len(df)
-test_df = pd.read_csv('Book1.csv')
 
 class MyStates(StatesGroup):
     address = State()
@@ -53,6 +49,10 @@ async def setup_bot_commands():
 
 @bot.message_handler(commands=['start'])
 async def start(message):
+    query = "INSERT INTO canteen (user_id) SELECT %s WHERE NOT EXISTS (SELECT user_id FROM canteen WHERE user_id = %s);"
+    data = (message.from_user.id, message.from_user.id)
+    cursor_obj.execute(query, data)
+    con.commit()
     markup = start_menu()
     send_mess = f"Привет, <b>{message.from_user.first_name}</b>!\nЯ бот, который поможет " \
                 f"тебе сделать заказ"
@@ -82,22 +82,28 @@ async def address(message):
 
 @bot.message_handler(state=MyStates.address)
 async def address_get(message):
+    query = "UPDATE canteen SET address = %s WHERE user_id = %s;"
+    data = (message.text, message.from_user.id)
+    cursor_obj.execute(query, data)
+    con.commit()
+    get_adr = "SELECT address FROM canteen WHERE user_id = %s"
+    user_data = (message.from_user.id, )
+    cursor_obj.execute(get_adr, user_data)
+    adr = cursor_obj.fetchone()
     markup = start_menu()
-    adrs.clear()
-    adrs.append(str(message.text))
     await bot.send_message(message.chat.id, "Записал ваш адрес и форму оплаты:\n<b>{address}</b>\nМожете продолжить "
-                                            "оформление заказа или завершить его".format(address=adrs[0]),
+                                            "оформление заказа или завершить его".format(address=adr[0]),
                            parse_mode="html", reply_markup=markup)
     await bot.delete_state(message.from_user.id, message.chat.id)
 
 
-@bot.message_handler(commands=['test'])
-async def menu(message):
-    cursor_obj.execute(f"insert into canteen(user_id, address) values ({message.from_user.id + 1}, 'test'); select * from canteen;")
-    # cursor_obj.execute("delete from canteen where address = 'test'; select * from canteen")
-    result = cursor_obj.fetchall()
-    con.commit()
-    await bot.send_message(message.chat.id, result, parse_mode='html')
+# @bot.message_handler(commands=['test'])
+# async def menu(message):
+#     cursor_obj.execute(f"insert into canteen(user_id, address) values ({message.from_user.id + 1}, 'test'); select * from canteen;")
+#     # cursor_obj.execute("delete from canteen where address = 'test'; select * from canteen")
+#     result = cursor_obj.fetchall()
+#     con.commit()
+#     await bot.send_message(message.chat.id, result, parse_mode='html')
 
 @bot.message_handler(commands=['admin'])
 async def admin(message):
@@ -184,6 +190,10 @@ def number_of_dishes():
 
 @bot.message_handler(content_types=['text'])
 async def mess(message):
+    order_list = {}
+    section_stack = []
+    dish_stack = []
+    adrs = []
     user.clear()
     user.append(message.chat.id)
     get_message_bot = message.text.strip()
