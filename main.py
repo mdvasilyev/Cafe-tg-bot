@@ -2,6 +2,7 @@ import pandas as pd
 import re
 import asyncio
 import psycopg2
+from psycopg2.extras import Json, DictCursor
 import telebot
 from telebot import asyncio_filters
 from telebot.async_telebot import AsyncTeleBot
@@ -16,21 +17,23 @@ con = psycopg2.connect(
     host='localhost',
     port='5432'
 )
-cursor_obj = con.cursor()
+cur = con.cursor()
+dict_cur = con.cursor(cursor_factory=DictCursor)
 
 bot = AsyncTeleBot('6049022584:AAEK8QxoT9kN0E1LTYaNhKNz4NjDdTxIdok', state_storage=StateMemoryStorage())
 
-# order = []
-# order_list = {}
-# section_stack = []
-# dish_stack = []
-# adrs = []
+order = []
+order_list = {}
+section_stack = []
+dish_stack = []
+adrs = []
 user = []
 
 admins = [1208161291, 659350346, 669249622]
 
 df = pd.read_excel('dishes.xlsx')
 max_dish = len(df)
+
 
 class MyStates(StatesGroup):
     address = State()
@@ -51,7 +54,7 @@ async def setup_bot_commands():
 async def start(message):
     query = "INSERT INTO canteen (user_id) SELECT %s WHERE NOT EXISTS (SELECT user_id FROM canteen WHERE user_id = %s);"
     data = (message.from_user.id, message.from_user.id)
-    cursor_obj.execute(query, data)
+    cur.execute(query, data)
     con.commit()
     markup = start_menu()
     send_mess = f"Привет, <b>{message.from_user.first_name}</b>!\nЯ бот, который поможет " \
@@ -84,12 +87,12 @@ async def address(message):
 async def address_get(message):
     query = "UPDATE canteen SET address = %s WHERE user_id = %s;"
     data = (message.text, message.from_user.id)
-    cursor_obj.execute(query, data)
+    cur.execute(query, data)
     con.commit()
     get_adr = "SELECT address FROM canteen WHERE user_id = %s"
-    user_data = (message.from_user.id, )
-    cursor_obj.execute(get_adr, user_data)
-    adr = cursor_obj.fetchone()
+    user_data = (message.from_user.id,)
+    cur.execute(get_adr, user_data)
+    adr = cur.fetchone()
     markup = start_menu()
     await bot.send_message(message.chat.id, "Записал ваш адрес и форму оплаты:\n<b>{address}</b>\nМожете продолжить "
                                             "оформление заказа или завершить его".format(address=adr[0]),
@@ -99,9 +102,9 @@ async def address_get(message):
 
 # @bot.message_handler(commands=['test'])
 # async def menu(message):
-#     cursor_obj.execute(f"insert into canteen(user_id, address) values ({message.from_user.id + 1}, 'test'); select * from canteen;")
-#     # cursor_obj.execute("delete from canteen where address = 'test'; select * from canteen")
-#     result = cursor_obj.fetchall()
+#     cur.execute(f"insert into canteen(user_id, address) values ({message.from_user.id + 1}, 'test'); select * from canteen;")
+#     # cur.execute("delete from canteen where address = 'test'; select * from canteen")
+#     result = cur.fetchall()
 #     con.commit()
 #     await bot.send_message(message.chat.id, result, parse_mode='html')
 
@@ -171,6 +174,7 @@ def gen_order(order_list: dict):
     text = '\n'.join(order) + f'\n\U0001F4B0<b>Итого (без упаковки):</b> {price}р.'
     return order, text
 
+
 def make_order():
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
     btn1 = types.KeyboardButton('Добавить в заказ')
@@ -190,34 +194,50 @@ def number_of_dishes():
 
 @bot.message_handler(content_types=['text'])
 async def mess(message):
-    order_list = {}
-    section_stack = []
-    dish_stack = []
-    adrs = []
+    userid = message.chat.id
+    # order_list = {}
+    # section_stack = []
+    # dish_stack = []
+    # adrs = []
     user.clear()
-    user.append(message.chat.id)
+    user.append(userid)
     get_message_bot = message.text.strip()
     if get_message_bot == "Вернуться к списку блюд":
         markup = start_menu()
         final_message = "Хочешь выбрать что-то ещё?"
     elif get_message_bot in df.iloc[:0]:
-        section_stack.clear()
-        section_stack.append(get_message_bot)
+        query = "UPDATE canteen SET section_stack = %s WHERE user_id = %s"
+        data = (get_message_bot, userid)
+        cur.execute(query, data)
+        con.commit()
         markup = gen_markup(df, get_message_bot)
         markup.add(types.KeyboardButton("Вернуться к списку блюд"))
         final_message = gen_menu(df, get_message_bot)
     elif len(get_message_bot) <= 2 and int(get_message_bot) in range(1, max_dish + 1):
-        dish = df[section_stack[0]][int(get_message_bot) - 1]
-        order_list[dish] = 0
-        dish_stack.clear()
-        dish_stack.append(dish)
+        query = "SELECT section_stack FROM canteen WHERE user_id = %s"
+        data = (userid,)
+        cur.execute(query, data)
+        section = cur.fetchone()[0]
+        dish = df[section][int(get_message_bot) - 1]
+        order_query = "UPDATE canteen SET order_list = %s WHERE user_id = %s"
+        order_data = (Json({dish: '0'}), userid)
+        dict_cur.execute(order_query, order_data)
+        con.commit()
+        dish_query = "UPDATE canteen SET dish_stack = %s WHERE user_id = %s"
+        dish_data = (dish, userid)
+        cur.execute(dish_query, dish_data)
+        con.commit()
         markup = make_order()
         final_message = f"{dish}\nДобавляем в заказ?"
     elif get_message_bot == "Добавить в заказ":
         markup = number_of_dishes()
         final_message = "Выберите количество"
     elif get_message_bot == "Отмена":
-        markup = gen_markup(df, section_stack[0])
+        query = "SELECT section_stack FROM canteen WHERE user_id = %s"
+        data = (userid,)
+        cur.execute(query, data)
+        section = cur.fetchone()
+        markup = gen_markup(df, section[0])
         markup.add(types.KeyboardButton("Вернуться к списку блюд"))
         final_message = "Может что-нибудь другое?"
     elif "шт" in get_message_bot:
@@ -230,7 +250,7 @@ async def mess(message):
         order, text = gen_order(order_list=order_list)
         if len(order) != 0 and len(adrs) != 0:
             final_message = '\n'.join(
-				["\U0001F37D <b>Заказ:</b>", f"{text}", "\U0001F4CD<b>Адрес и форма оплаты:</b>", adrs[0]])
+                ["\U0001F37D <b>Заказ:</b>", f"{text}", "\U0001F4CD<b>Адрес и форма оплаты:</b>", adrs[0]])
         else:
             final_message = "\U000026A0 Проверьте, что вы добавили блюда и указали адрес доставки (/address)"
     elif get_message_bot == "Завершить заказ":
@@ -249,7 +269,8 @@ async def mess(message):
     else:
         markup = start_menu()
         final_message = "Для совершения заказа пользуйтесь предлагаемыми кнопками и меню \U0001F601"
-    await bot.send_message(message.chat.id, final_message, parse_mode='html', reply_markup=markup)
+    await bot.send_message(userid, final_message, parse_mode='html', reply_markup=markup)
+
 
 bot.add_custom_filter(asyncio_filters.StateFilter(bot))
 
