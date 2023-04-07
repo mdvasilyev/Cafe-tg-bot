@@ -241,38 +241,41 @@ async def mess(message):
         markup = start_menu()
         final_message = "Отличный выбор \U0001F44D"
     elif get_message_bot == "Посмотреть заказ":
-        query = "SELECT order_list FROM canteen WHERE user_id = %s"
+        query = "SELECT order_list FROM canteen WHERE user_id = %s;"
         data = (userid,)
         cur.execute(query, data)
-        order_list = cur.fetchone()
-        adrs_query = "select address from canteen where user_id = %s"
+        order_list = cur.fetchone()[0]
+        adrs_query = "SELECT address FROM canteen WHERE user_id = %s;"
         cur.execute(adrs_query, data)
-        adrs = cur.fetchone()[0][0]
+        adrs = cur.fetchone()[0]
         markup = start_menu()
         order, text = gen_order(order_list)
-        if (len(order) != 0) and adrs is not None:
+        if len(order) != 0 and adrs is not None:
             final_message = '\n'.join(
                 ["\U0001F37D <b>Заказ:</b>", f"{text}", "\U0001F4CD<b>Адрес и форма оплаты:</b>", adrs])
         else:
             final_message = "\U000026A0 Проверьте, что вы добавили блюда и указали адрес доставки (/address)"
     elif get_message_bot == "Завершить заказ":
-        query = "SELECT order_list FROM canteen WHERE user_id = %s"
+        query = "SELECT order_list FROM canteen WHERE user_id = %s;"
         data = (userid,)
         cur.execute(query, data)
-        order_list = cur.fetchone()
-        adrs_query = "SELECT address FROM canteen WHERE user_id = %s"
+        order_list = cur.fetchone()[0]
+        adrs_query = "SELECT address FROM canteen WHERE user_id = %s;"
         cur.execute(adrs_query, data)
         adrs = cur.fetchone()[0]
         markup = start_menu()
         admin_markup = types.InlineKeyboardMarkup()
         admin_markup.add(types.InlineKeyboardButton("Заказ отдан курьеру", callback_data="order_checkbox"))
         order, text = gen_order(order_list)
-        if len(order) != 0 and len(adrs) != 0:
+        if len(order) != 0 and adrs is not None:
             final_message = '\n'.join(
-                ["\U0001F37D <b>Заказ:</b>", f"{text}", "\U0001F4CD <b>Адрес и форма оплаты:</b>", adrs[0]])
-            order_list.clear()
+                ["\U0001F37D <b>Заказ:</b>", f"{text}", "\U0001F4CD <b>Адрес и форма оплаты:</b>", adrs])
+            query = "UPDATE canteen SET order_list = '{}' WHERE user_id = %s"
+            data = (userid,)
+            cur.execute(query, data)
+            con.commit()
             order.clear()
-            await bot.send_message(admins[0], final_message, parse_mode='html', reply_markup=admin_markup)
+            # await bot.send_message(admins[0], final_message, parse_mode='html', reply_markup=admin_markup)
         else:
             final_message = "\U000026A0 Проверьте, что вы добавили блюда и указали адрес доставки (/address)"
     else:
