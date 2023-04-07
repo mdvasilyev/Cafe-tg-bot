@@ -22,10 +22,10 @@ dict_cur = con.cursor(cursor_factory=DictCursor)
 
 bot = AsyncTeleBot('6049022584:AAEK8QxoT9kN0E1LTYaNhKNz4NjDdTxIdok', state_storage=StateMemoryStorage())
 
-order = []
+# order = []
 order_list = {}
-section_stack = []
-dish_stack = []
+# section_stack = []
+# dish_stack = []
 adrs = []
 user = []
 
@@ -67,8 +67,8 @@ async def vk(message):
     markup = types.InlineKeyboardMarkup()
     markup.add(types.InlineKeyboardButton("Посетить группу Вк", url="https://ru.wikipedia.org/wiki/%D0%A1%D1%82%D0%BE"
                                                                     "%D0%BB%D0%BE%D0%B2%D0%B0%D1%8F"))
-    await bot.send_message(message.chat.id, "Нажмите на кнопку ниже и посетите нашу группу Вк", parse_mode='html',
-                           reply_markup=markup)
+    await bot.send_message(message.chat.id, "Нажмите на кнопку ниже и посетите нашу группу Вк",
+                           parse_mode='html', reply_markup=markup)
 
 
 @bot.message_handler(commands=['phone'])
@@ -89,13 +89,10 @@ async def address_get(message):
     data = (message.text, message.from_user.id)
     cur.execute(query, data)
     con.commit()
-    get_adr = "SELECT address FROM canteen WHERE user_id = %s"
-    user_data = (message.from_user.id,)
-    cur.execute(get_adr, user_data)
-    adr = cur.fetchone()
+    adr = message.text
     markup = start_menu()
-    await bot.send_message(message.chat.id, "Записал ваш адрес и форму оплаты:\n<b>{address}</b>\nМожете продолжить "
-                                            "оформление заказа или завершить его".format(address=adr[0]),
+    await bot.send_message(message.chat.id, f"Записал ваш адрес и форму оплаты:\n<b>{adr}</b>\nМожете продолжить "
+                                            f"оформление заказа или завершить его",
                            parse_mode="html", reply_markup=markup)
     await bot.delete_state(message.from_user.id, message.chat.id)
 
@@ -195,18 +192,12 @@ def number_of_dishes():
 @bot.message_handler(content_types=['text'])
 async def mess(message):
     userid = message.chat.id
-    # order_list = {}
-    # section_stack = []
-    # dish_stack = []
-    # adrs = []
-    user.clear()
-    user.append(userid)
     get_message_bot = message.text.strip()
     if get_message_bot == "Вернуться к списку блюд":
         markup = start_menu()
         final_message = "Хочешь выбрать что-то ещё?"
     elif get_message_bot in df.iloc[:0]:
-        query = "UPDATE canteen SET section_stack = %s WHERE user_id = %s"
+        query = "UPDATE canteen SET section_stack = %s WHERE user_id = %s;"
         data = (get_message_bot, userid)
         cur.execute(query, data)
         con.commit()
@@ -214,16 +205,12 @@ async def mess(message):
         markup.add(types.KeyboardButton("Вернуться к списку блюд"))
         final_message = gen_menu(df, get_message_bot)
     elif len(get_message_bot) <= 2 and int(get_message_bot) in range(1, max_dish + 1):
-        query = "SELECT section_stack FROM canteen WHERE user_id = %s"
+        query = "SELECT section_stack FROM canteen WHERE user_id = %s;"
         data = (userid,)
         cur.execute(query, data)
         section = cur.fetchone()[0]
         dish = df[section][int(get_message_bot) - 1]
-        order_query = "UPDATE canteen SET order_list = %s WHERE user_id = %s"
-        order_data = (Json({dish: '0'}), userid)
-        dict_cur.execute(order_query, order_data)
-        con.commit()
-        dish_query = "UPDATE canteen SET dish_stack = %s WHERE user_id = %s"
+        dish_query = "UPDATE canteen SET dish_stack = %s WHERE user_id = %s;"
         dish_data = (dish, userid)
         cur.execute(dish_query, dish_data)
         con.commit()
@@ -233,16 +220,24 @@ async def mess(message):
         markup = number_of_dishes()
         final_message = "Выберите количество"
     elif get_message_bot == "Отмена":
-        query = "SELECT section_stack FROM canteen WHERE user_id = %s"
+        query = "SELECT section_stack FROM canteen WHERE user_id = %s;"
         data = (userid,)
         cur.execute(query, data)
-        section = cur.fetchone()
-        markup = gen_markup(df, section[0])
+        section = cur.fetchone()[0]
+        markup = gen_markup(df, section)
         markup.add(types.KeyboardButton("Вернуться к списку блюд"))
         final_message = "Может что-нибудь другое?"
-    elif "шт" in get_message_bot:
+    elif len(get_message_bot) == 4 and "шт" in get_message_bot:
         number = int(get_message_bot.replace('шт', ''))
-        order_list[dish_stack[0]] += number
+        query = "SELECT dish_stack FROM canteen WHERE user_id = %s;"
+        data = (userid,)
+        cur.execute(query, data)
+        dish = cur.fetchone()[0]
+        order_query = "UPDATE canteen SET order_list = %s WHERE user_id = %s"
+        order_data = (Json({dish: f'{number}'}))
+        dict_cur.execute(order_query, order_data)
+        con.commit()
+        # order_list[dish_stack[0]] += number
         markup = start_menu()
         final_message = "Отличный выбор \U0001F44D"
     elif get_message_bot == "Посмотреть заказ":
