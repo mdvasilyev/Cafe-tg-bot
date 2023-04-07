@@ -26,9 +26,9 @@ bot = AsyncTeleBot('6049022584:AAEK8QxoT9kN0E1LTYaNhKNz4NjDdTxIdok', state_stora
 # order = []
 # order_list = {}
 # section_stack = []
-# dish_stack = []
-adrs = []
-user = []
+# # dish_stack = []
+# adrs = []
+# user = []
 
 admins = [1208161291, 659350346, 669249622]
 
@@ -53,7 +53,7 @@ async def setup_bot_commands():
 
 @bot.message_handler(commands=['start'])
 async def start(message):
-    query = "INSERT INTO canteen (user_id, order_list, courier_check) SELECT %s, '{}', False WHERE NOT EXISTS (SELECT (user_id, order_list, courier_check) FROM canteen WHERE user_id = %s);"
+    query = "INSERT INTO canteen (user_id, order_list) SELECT %s, '{}' WHERE NOT EXISTS (SELECT (user_id, order_list, courier_check) FROM canteen WHERE user_id = %s);"
     data = (message.from_user.id, message.from_user.id)
     cur.execute(query, data)
     conn.commit()
@@ -98,13 +98,13 @@ async def address_get(message):
     await bot.delete_state(message.from_user.id, message.chat.id)
 
 
-@bot.message_handler(commands=['test'])
-async def test(message):
-    # query = "select address from canteen where user_id = 1208161291"
-    # cur.execute(query)
-    # result = cur.fetchall()[0][0]
-    result = message.chat.username
-    await bot.send_message(message.chat.id, result, parse_mode='html')
+# @bot.message_handler(commands=['test'])
+# async def test(message):
+#     # query = "select address from canteen where user_id = 1208161291"
+#     # cur.execute(query)
+#     # result = cur.fetchall()[0][0]
+#     result = message.chat.username
+#     await bot.send_message(message.chat.id, result, parse_mode='html')
 
 
 @bot.message_handler(commands=['admin'])
@@ -129,7 +129,7 @@ async def callback_inline(call):
     data = (call.data,)
     cur.execute(query, data)
     user_id = cur.fetchone()[0]
-    set_query = "UPDATE canteen SET courier_check = TRUE WHERE address = %s"
+    set_query = "UPDATE canteen SET courier_check = NULL, order_list = '{}' WHERE address = %s"
     cur.execute(set_query, data)
     conn.commit()
     await bot.send_message(user_id, "Ваш заказ передан курьеру", parse_mode='html')
@@ -273,18 +273,15 @@ async def mess(message):
         markup = start_menu()
         order, text = gen_order(order_list)
         if len(order) != 0 and adrs is not None:
+            query = "UPDATE canteen SET courier_check = FALSE WHERE address = %s;"
+            data = (adrs,)
+            cur.execute(query, data)
+            conn.commit()
             final_message = '\n'.join(
                 ["\U0001F37D <b>Заказ:</b>", f"{text}", "\U0001F4CD <b>Адрес и форма оплаты:</b>", adrs])
-            # admin_final_message = '\n'.join(final)
-            # query = "UPDATE canteen SET order_list = '{}' WHERE user_id = %s"
-            # data = (userid,)
-            # cur.execute(query, data)
-            # conn.commit()
-            # order.clear()
             admin_markup = types.InlineKeyboardMarkup(row_width=3)
             buttons = []
-            # admin_markup.add(types.InlineKeyboardButton("Заказ отдан курьеру", callback_data="order_checkbox"))
-            cur.execute("SELECT address FROM canteen WHERE courier_check IS FALSE")
+            cur.execute("SELECT address FROM canteen WHERE courier_check IS FALSE;")
             users = cur.fetchall()
             for user in users:
                 buttons.append(types.InlineKeyboardButton(text=user[0], callback_data=user[0]))
