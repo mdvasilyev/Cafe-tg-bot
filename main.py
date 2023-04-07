@@ -1,3 +1,5 @@
+import json
+
 import pandas as pd
 import re
 import asyncio
@@ -17,13 +19,12 @@ con = psycopg2.connect(
     host='localhost',
     port='5432'
 )
-cur = con.cursor()
-dict_cur = con.cursor(cursor_factory=DictCursor)
+cur = con.cursor(cursor_factory=DictCursor)
 
 bot = AsyncTeleBot('6049022584:AAEK8QxoT9kN0E1LTYaNhKNz4NjDdTxIdok', state_storage=StateMemoryStorage())
 
 # order = []
-order_list = {}
+# order_list = {}
 # section_stack = []
 # dish_stack = []
 adrs = []
@@ -52,7 +53,7 @@ async def setup_bot_commands():
 
 @bot.message_handler(commands=['start'])
 async def start(message):
-    query = "INSERT INTO canteen (user_id) SELECT %s WHERE NOT EXISTS (SELECT user_id FROM canteen WHERE user_id = %s);"
+    query = "INSERT INTO canteen (user_id, order_list, courier_check) SELECT %s, '{}', False WHERE NOT EXISTS (SELECT (user_id, order_list, courier_check) FROM canteen WHERE user_id = %s);"
     data = (message.from_user.id, message.from_user.id)
     cur.execute(query, data)
     con.commit()
@@ -97,13 +98,13 @@ async def address_get(message):
     await bot.delete_state(message.from_user.id, message.chat.id)
 
 
-# @bot.message_handler(commands=['test'])
-# async def menu(message):
-#     cur.execute(f"insert into canteen(user_id, address) values ({message.from_user.id + 1}, 'test'); select * from canteen;")
-#     # cur.execute("delete from canteen where address = 'test'; select * from canteen")
-#     result = cur.fetchall()
-#     con.commit()
-#     await bot.send_message(message.chat.id, result, parse_mode='html')
+@bot.message_handler(commands=['test'])
+async def menu(message):
+    query = "select address from canteen where user_id = 1208161291"
+    cur.execute(query)
+    result = cur.fetchall()[0][0]
+    await bot.send_message(message.chat.id, result, parse_mode='html')
+
 
 @bot.message_handler(commands=['admin'])
 async def admin(message):
@@ -227,32 +228,45 @@ async def mess(message):
         markup = gen_markup(df, section)
         markup.add(types.KeyboardButton("Вернуться к списку блюд"))
         final_message = "Может что-нибудь другое?"
-    elif len(get_message_bot) == 4 and "шт" in get_message_bot:
+    elif len(get_message_bot) <= 5 and "шт" in get_message_bot:
         number = int(get_message_bot.replace('шт', ''))
         query = "SELECT dish_stack FROM canteen WHERE user_id = %s;"
         data = (userid,)
         cur.execute(query, data)
         dish = cur.fetchone()[0]
-        order_query = "UPDATE canteen SET order_list = %s WHERE user_id = %s"
-        order_data = (Json({dish: f'{number}'}))
-        dict_cur.execute(order_query, order_data)
+        order_query = "UPDATE canteen SET order_list = order_list || jsonb_build_object(%s, %s) WHERE user_id = %s;"
+        order_data = (dish, number, userid)
+        cur.execute(order_query, order_data)
         con.commit()
-        # order_list[dish_stack[0]] += number
         markup = start_menu()
         final_message = "Отличный выбор \U0001F44D"
     elif get_message_bot == "Посмотреть заказ":
+        query = "SELECT order_list FROM canteen WHERE user_id = %s"
+        data = (userid,)
+        cur.execute(query, data)
+        order_list = cur.fetchone()
+        adrs_query = "select address from canteen where user_id = %s"
+        cur.execute(adrs_query, data)
+        adrs = cur.fetchone()[0][0]
         markup = start_menu()
-        order, text = gen_order(order_list=order_list)
-        if len(order) != 0 and len(adrs) != 0:
+        order, text = gen_order(order_list)
+        if (len(order) != 0) and adrs is not None:
             final_message = '\n'.join(
-                ["\U0001F37D <b>Заказ:</b>", f"{text}", "\U0001F4CD<b>Адрес и форма оплаты:</b>", adrs[0]])
+                ["\U0001F37D <b>Заказ:</b>", f"{text}", "\U0001F4CD<b>Адрес и форма оплаты:</b>", adrs])
         else:
             final_message = "\U000026A0 Проверьте, что вы добавили блюда и указали адрес доставки (/address)"
     elif get_message_bot == "Завершить заказ":
+        query = "SELECT order_list FROM canteen WHERE user_id = %s"
+        data = (userid,)
+        cur.execute(query, data)
+        order_list = cur.fetchone()
+        adrs_query = "SELECT address FROM canteen WHERE user_id = %s"
+        cur.execute(adrs_query, data)
+        adrs = cur.fetchone()[0]
         markup = start_menu()
         admin_markup = types.InlineKeyboardMarkup()
         admin_markup.add(types.InlineKeyboardButton("Заказ отдан курьеру", callback_data="order_checkbox"))
-        order, text = gen_order(order_list=order_list)
+        order, text = gen_order(order_list)
         if len(order) != 0 and len(adrs) != 0:
             final_message = '\n'.join(
                 ["\U0001F37D <b>Заказ:</b>", f"{text}", "\U0001F4CD <b>Адрес и форма оплаты:</b>", adrs[0]])
