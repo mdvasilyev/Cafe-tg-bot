@@ -12,14 +12,14 @@ from telebot.asyncio_storage import StateMemoryStorage
 from telebot.asyncio_handler_backends import State, StatesGroup
 from telebot import types
 
-con = psycopg2.connect(
+conn = psycopg2.connect(
     database='postgres',
     user='postgres',
     password='postgres',
     host='localhost',
     port='5432'
 )
-cur = con.cursor(cursor_factory=DictCursor)
+cur = conn.cursor(cursor_factory=DictCursor)
 
 bot = AsyncTeleBot('6049022584:AAEK8QxoT9kN0E1LTYaNhKNz4NjDdTxIdok', state_storage=StateMemoryStorage())
 
@@ -56,7 +56,7 @@ async def start(message):
     query = "INSERT INTO canteen (user_id, order_list, courier_check) SELECT %s, '{}', False WHERE NOT EXISTS (SELECT (user_id, order_list, courier_check) FROM canteen WHERE user_id = %s);"
     data = (message.from_user.id, message.from_user.id)
     cur.execute(query, data)
-    con.commit()
+    conn.commit()
     markup = start_menu()
     send_mess = f"Привет, <b>{message.from_user.first_name}</b>!\nЯ бот, который поможет " \
                 f"тебе сделать заказ"
@@ -89,7 +89,7 @@ async def address_get(message):
     query = "UPDATE canteen SET address = %s WHERE user_id = %s;"
     data = (message.text, message.from_user.id)
     cur.execute(query, data)
-    con.commit()
+    conn.commit()
     adr = message.text
     markup = start_menu()
     await bot.send_message(message.chat.id, f"Записал ваш адрес и форму оплаты:\n<b>{adr}</b>\nМожете продолжить "
@@ -99,10 +99,11 @@ async def address_get(message):
 
 
 @bot.message_handler(commands=['test'])
-async def menu(message):
-    query = "select address from canteen where user_id = 1208161291"
-    cur.execute(query)
-    result = cur.fetchall()[0][0]
+async def test(message):
+    # query = "select address from canteen where user_id = 1208161291"
+    # cur.execute(query)
+    # result = cur.fetchall()[0][0]
+    result = message.chat.username
     await bot.send_message(message.chat.id, result, parse_mode='html')
 
 
@@ -124,8 +125,14 @@ async def add(message):
 
 @bot.callback_query_handler(func=lambda call: True)
 async def callback_inline(call):
-    if call.data == 'order_checkbox':
-        await bot.send_message(user[0], "Ваш заказ передан курьеру", parse_mode='html')
+    query = "SELECT user_id FROM canteen WHERE address = %s"
+    data = (call.data,)
+    cur.execute(query, data)
+    user_id = cur.fetchone()[0]
+    set_query = "UPDATE canteen SET courier_check = TRUE WHERE address = %s"
+    cur.execute(set_query, data)
+    conn.commit()
+    await bot.send_message(user_id, "Ваш заказ передан курьеру", parse_mode='html')
 
 
 def start_menu():
@@ -201,7 +208,7 @@ async def mess(message):
         query = "UPDATE canteen SET section_stack = %s WHERE user_id = %s;"
         data = (get_message_bot, userid)
         cur.execute(query, data)
-        con.commit()
+        conn.commit()
         markup = gen_markup(df, get_message_bot)
         markup.add(types.KeyboardButton("Вернуться к списку блюд"))
         final_message = gen_menu(df, get_message_bot)
@@ -214,7 +221,7 @@ async def mess(message):
         dish_query = "UPDATE canteen SET dish_stack = %s WHERE user_id = %s;"
         dish_data = (dish, userid)
         cur.execute(dish_query, dish_data)
-        con.commit()
+        conn.commit()
         markup = make_order()
         final_message = f"{dish}\nДобавляем в заказ?"
     elif get_message_bot == "Добавить в заказ":
@@ -237,7 +244,7 @@ async def mess(message):
         order_query = "UPDATE canteen SET order_list = order_list || jsonb_build_object(%s, %s) WHERE user_id = %s;"
         order_data = (dish, number, userid)
         cur.execute(order_query, order_data)
-        con.commit()
+        conn.commit()
         markup = start_menu()
         final_message = "Отличный выбор \U0001F44D"
     elif get_message_bot == "Посмотреть заказ":
@@ -264,18 +271,25 @@ async def mess(message):
         cur.execute(adrs_query, data)
         adrs = cur.fetchone()[0]
         markup = start_menu()
-        admin_markup = types.InlineKeyboardMarkup()
-        admin_markup.add(types.InlineKeyboardButton("Заказ отдан курьеру", callback_data="order_checkbox"))
         order, text = gen_order(order_list)
         if len(order) != 0 and adrs is not None:
             final_message = '\n'.join(
                 ["\U0001F37D <b>Заказ:</b>", f"{text}", "\U0001F4CD <b>Адрес и форма оплаты:</b>", adrs])
-            query = "UPDATE canteen SET order_list = '{}' WHERE user_id = %s"
-            data = (userid,)
-            cur.execute(query, data)
-            con.commit()
-            order.clear()
-            # await bot.send_message(admins[0], final_message, parse_mode='html', reply_markup=admin_markup)
+            # admin_final_message = '\n'.join(final)
+            # query = "UPDATE canteen SET order_list = '{}' WHERE user_id = %s"
+            # data = (userid,)
+            # cur.execute(query, data)
+            # conn.commit()
+            # order.clear()
+            admin_markup = types.InlineKeyboardMarkup(row_width=3)
+            buttons = []
+            # admin_markup.add(types.InlineKeyboardButton("Заказ отдан курьеру", callback_data="order_checkbox"))
+            cur.execute("SELECT address FROM canteen WHERE courier_check IS FALSE")
+            users = cur.fetchall()
+            for user in users:
+                buttons.append(types.InlineKeyboardButton(text=user[0], callback_data=user[0]))
+            admin_markup.add(*buttons)
+            await bot.send_message(admins[0], final_message, parse_mode='html', reply_markup=admin_markup)
         else:
             final_message = "\U000026A0 Проверьте, что вы добавили блюда и указали адрес доставки (/address)"
     else:
