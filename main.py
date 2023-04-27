@@ -31,7 +31,7 @@ max_dish = len(df)
 
 class MyStates(StatesGroup):
     address = State()
-    phone_number = State()
+    phone = State()
 
 
 async def setup_bot_commands():
@@ -39,8 +39,8 @@ async def setup_bot_commands():
     bot_commands = [
         telebot.types.BotCommand("/start", "Начальная страница"),
         telebot.types.BotCommand("/address", "Ввести адрес и оплату"),
-        telebot.types.BotCommand("/vk", "Ссылка на группу ВК"),
-        telebot.types.BotCommand("/phone", "Номер телефона")
+        telebot.types.BotCommand("/phone", "Ввести номер телефона"),
+        telebot.types.BotCommand("/vk", "Ссылка на группу ВК")
     ]
     await bot.set_my_commands(bot_commands)
 
@@ -67,10 +67,10 @@ async def vk(message):
                            parse_mode='html', reply_markup=markup)
 
 
-@bot.message_handler(commands=['phone'])
-async def phone(message):
-    await bot.send_message(message.chat.id, "Вы можете связаться с нами по телефону: <i>+7(123)456-78-90</i>",
-                           parse_mode='html')
+# @bot.message_handler(commands=['phone'])
+# async def phone(message):
+#     await bot.send_message(message.chat.id, "Вы можете связаться с нами по телефону: <i>+7(123)456-78-90</i>",
+#                            parse_mode='html')
 
 
 @bot.message_handler(commands=['address'])
@@ -93,13 +93,13 @@ async def address_get(message):
     await bot.delete_state(message.from_user.id, message.chat.id)
 
 
-@bot.message_handler(commands=['phone_number'])
-async def phone_number(message):
-    await bot.set_state(message.from_user.id, MyStates.phone_number, message.chat.id)
+@bot.message_handler(commands=['phone'])
+async def phone(message):
+    await bot.set_state(message.from_user.id, MyStates.phone, message.chat.id)
     await bot.send_message(message.chat.id, 'Напишите номер телефона в формате +7xxxxxxxxxx')
 
 
-@bot.message_handler(state=MyStates.phone_number)
+@bot.message_handler(state=MyStates.phone)
 async def phone_number_get(message):
     query = "UPDATE canteen SET phone_number = %s WHERE user_id = %s;"
     data = (message.text, message.from_user.id)
@@ -302,7 +302,7 @@ async def mess(message):
         cur.execute(query, data)
         phone_number = cur.fetchone()[0]
         if username is None and phone_number is None:
-            final_message = "\U000026A0 Укажите, пожалуйста, номер телефона для связи (/phone_number)"
+            final_message = "\U000026A0 Укажите, пожалуйста, номер телефона для связи (/phone)"
         else:
             query = "SELECT order_list, address FROM canteen WHERE user_id = %s;"
             data = (userid,)
