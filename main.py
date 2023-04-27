@@ -53,8 +53,8 @@ async def start(message):
     cur.execute(query, data)
     conn.commit()
     markup = start_menu()
-    send_mess = f"Привет, <b>{message.from_user.first_name}</b>!\nЯ бот, который поможет " \
-                f"тебе сделать заказ"
+    send_mess = f"Привет, <b>{message.from_user.first_name}</b>!\nЯ бот \U0001F916, который поможет " \
+                f"тебе сделать заказ \U0001F4C4. Пользуйся меню с командами и кнопками ниже \U0001F447"
     await bot.send_message(message.chat.id, send_mess, parse_mode='html', reply_markup=markup)
 
 
@@ -130,7 +130,8 @@ async def admin(message):
         for user in users:
             buttons.append(types.InlineKeyboardButton(text=user[0], callback_data=user[0]))
         admin_markup.add(*buttons)
-        await bot.send_message(admins[0], 'Список актуальных заказов', parse_mode='html', reply_markup=admin_markup)
+        await bot.send_message(admins[0], '\U0001F4C4 Список актуальных заказов', parse_mode='html',
+                               reply_markup=admin_markup)
     else:
         send_mess = 'Вы не админ'
         await bot.send_message(message.chat.id, send_mess, parse_mode='html')
@@ -147,12 +148,12 @@ async def callback_inline(call):
     info = str(call.data)
     data = (info,)
     if info.startswith('+'):
-        query = "SELECT user_id FROM canteen WHERE phone_number = %s"
+        query = "SELECT user_id FROM canteen WHERE phone_number = %s;"
     else:
-        query = "SELECT user_id FROM canteen WHERE user_name = %s"
+        query = "SELECT user_id FROM canteen WHERE user_name = %s;"
     cur.execute(query, data)
     user_id = cur.fetchone()[0]
-    set_query = "UPDATE canteen SET courier_check = NULL, order_list = '{}' WHERE user_id = %s"
+    set_query = "UPDATE canteen SET courier_check = NULL, order_list = '{}' WHERE user_id = %s;"
     set_data = (user_id,)
     cur.execute(set_query, set_data)
     conn.commit()
@@ -232,7 +233,6 @@ def number_of_dishes():
 async def mess(message):
     userid = message.chat.id
     get_message_bot = message.text.strip()
-    final_message = "Похоже, что-то работает неправильно..."
     if get_message_bot == "Вернуться к списку блюд":
         markup = start_menu()
         final_message = "Хочешь выбрать что-то ещё?"
@@ -294,7 +294,7 @@ async def mess(message):
     elif get_message_bot == "Завершить заказ":
         markup = start_menu()
         username = message.from_user.username
-        query = "SELECT phone_number FROM canteen WHERE user_id = %s"
+        query = "SELECT phone_number FROM canteen WHERE user_id = %s;"
         data = (userid,)
         cur.execute(query, data)
         phone_number = cur.fetchone()[0]
