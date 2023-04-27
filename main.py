@@ -10,6 +10,8 @@ from telebot.asyncio_storage import StateMemoryStorage
 from telebot.asyncio_handler_backends import State, StatesGroup
 from telebot import types
 
+# from tabulate import tabulate
+
 conn = psycopg2.connect(
     database='postgres',
     user='postgres',
@@ -29,6 +31,7 @@ max_dish = len(df)
 
 class MyStates(StatesGroup):
     address = State()
+    phone_number = State()
 
 
 async def setup_bot_commands():
@@ -90,12 +93,29 @@ async def address_get(message):
     await bot.delete_state(message.from_user.id, message.chat.id)
 
 
+@bot.message_handler(commands=['phone_number'])
+async def phone_number(message):
+    await bot.set_state(message.from_user.id, MyStates.phone_number, message.chat.id)
+    await bot.send_message(message.chat.id, 'Напишите номер телефона в формате +7xxxxxxxxxx')
+
+
+@bot.message_handler(state=MyStates.phone_number)
+async def phone_number_get(message):
+    query = "UPDATE canteen SET phone_number = %s WHERE user_id = %s;"
+    data = (message.text, message.from_user.id)
+    cur.execute(query, data)
+    conn.commit()
+    phone_number = message.text
+    markup = start_menu()
+    await bot.send_message(message.chat.id, f"Записал ваш номер телефона:\n<b>{phone_number}</b>"
+                                            f"\nМожете продолжить оформление заказа или завершить его",
+                           parse_mode="html", reply_markup=markup)
+    await bot.delete_state(message.from_user.id, message.chat.id)
+
+
 # @bot.message_handler(commands=['test'])
 # async def test(message):
-#     # query = "select address from canteen where user_id = 1208161291"
-#     # cur.execute(query)
-#     # result = cur.fetchall()[0][0]
-#     result = message.chat.username
+#     result = message.from_user
 #     await bot.send_message(message.chat.id, result, parse_mode='html')
 
 
@@ -124,12 +144,17 @@ async def admin(message):
 
 @bot.callback_query_handler(func=lambda call: True)
 async def callback_inline(call):
-    query = "SELECT user_id FROM canteen WHERE user_name = %s"
-    data = (call.data,)
+    info = str(call.data)
+    data = (info,)
+    if info.startswith('+'):
+        query = "SELECT user_id FROM canteen WHERE phone_number = %s"
+    else:
+        query = "SELECT user_id FROM canteen WHERE user_name = %s"
     cur.execute(query, data)
     user_id = cur.fetchone()[0]
-    set_query = "UPDATE canteen SET courier_check = NULL, order_list = '{}' WHERE user_name = %s"
-    cur.execute(set_query, data)
+    set_query = "UPDATE canteen SET courier_check = NULL, order_list = '{}' WHERE user_id = %s"
+    set_data = (user_id,)
+    cur.execute(set_query, set_data)
     conn.commit()
     await bot.send_message(user_id, "Ваш заказ передан курьеру", parse_mode='html')
 
@@ -176,6 +201,13 @@ def gen_order(order_list: dict):
             part_to_remove = re.search(r'\d+. ', i).group()
             order.append(' '.join([i.replace(part_to_remove, ''), f'{str(j)} шт']))
     text = '\n'.join(order) + f'\n\U0001F4B0<b>Итого (без упаковки):</b> {price}р.'
+    # for i, j in order_list.items():
+    #     if j != 0:
+    #         price += int(re.search(r', (\d+?)р.', i).group()[2:-2]) * j
+    #         part_to_remove = re.search(r'\d+. ', i).group()
+    #         order.append([i.replace(part_to_remove, ''), f'{str(j)} шт'])
+    # order.append(f'\U0001F4B0<b>Итого (без упаковки):</b> {price}р.')
+    # text = f'''<pre>{tabulate(order, tablefmt="plain")}</pre>'''
     return order, text
 
 
@@ -200,6 +232,7 @@ def number_of_dishes():
 async def mess(message):
     userid = message.chat.id
     get_message_bot = message.text.strip()
+    final_message = "Похоже, что-то работает неправильно..."
     if get_message_bot == "Вернуться к списку блюд":
         markup = start_menu()
         final_message = "Хочешь выбрать что-то ещё?"
@@ -262,31 +295,46 @@ async def mess(message):
         else:
             final_message = "\U000026A0 Проверьте, что вы добавили блюда и указали адрес доставки (/address)"
     elif get_message_bot == "Завершить заказ":
+        markup = start_menu()
         username = message.from_user.username
-        query = "SELECT order_list, address FROM canteen WHERE user_id = %s;"
+        query = "SELECT phone_number FROM canteen WHERE user_id = %s"
         data = (userid,)
         cur.execute(query, data)
-        order_list, adrs = cur.fetchone()
-        markup = start_menu()
-        order, text = gen_order(order_list)
-        if len(order) != 0 and adrs is not None:
-            query = "UPDATE canteen SET courier_check = FALSE, user_name = %s WHERE address = %s;"
-            data = (username, adrs)
-            cur.execute(query, data)
-            conn.commit()
-            final_message = '\n'.join(
-                [f"\U0001F37D <b>Заказ:</b>", f"{text}", "\U0001F4CD <b>Адрес и форма оплаты:</b>",
-                 adrs])
-            admin_fin_mes = '\n'.join(
-                [f"\U0001F37D <b>Заказ от @{username}:</b>", f"{text}", "\U0001F4CD <b>Адрес и форма оплаты:</b>",
-                 adrs, "Чтобы посмотреть список актуальных заказов, воспользуйтесь командой /admin"])
-            admin_markup = types.InlineKeyboardMarkup(row_width=3)
-            cur.execute(f"SELECT user_name FROM canteen WHERE user_id = {userid};")
-            user = cur.fetchone()
-            admin_markup.add(types.InlineKeyboardButton(text=user[0], callback_data=user[0]))
-            await bot.send_message(admins[0], admin_fin_mes, parse_mode='html', reply_markup=admin_markup)
+        phone_number = cur.fetchone()[0]
+        if username is None and phone_number is None:
+            final_message = "\U000026A0 Укажите, пожалуйста, номер телефона для связи (/phone_number)"
         else:
-            final_message = "\U000026A0 Проверьте, что вы добавили блюда и указали адрес доставки (/address)"
+            query = "SELECT order_list, address FROM canteen WHERE user_id = %s;"
+            data = (userid,)
+            cur.execute(query, data)
+            order_list, adrs = cur.fetchone()
+            order, text = gen_order(order_list)
+            if len(order) != 0 and adrs is not None:
+                query = "UPDATE canteen SET courier_check = FALSE, user_name = %s WHERE address = %s;"
+                data = (username, adrs)
+                cur.execute(query, data)
+                conn.commit()
+                final_message = '\n'.join(
+                    [f"\U0001F37D <b>Заказ:</b>", f"{text}", "\U0001F4CD <b>Адрес и форма оплаты:</b>",
+                     adrs])
+                if username is not None:
+                    admin_fin_mes = '\n'.join(
+                        [f"\U0001F37D <b>Заказ от @{username}:</b>", f"{text}",
+                         "\U0001F4CD <b>Адрес и форма оплаты:</b>", adrs,
+                         "Чтобы посмотреть список актуальных заказов, воспользуйтесь командой /admin"])
+                else:
+                    admin_fin_mes = '\n'.join(
+                        [f"\U0001F37D <b>Заказ от t.me/{phone_number}:</b>", f"{text}",
+                         "\U0001F4CD <b>Адрес и форма оплаты:</b>", adrs,
+                         "Чтобы посмотреть список актуальных заказов, воспользуйтесь командой /admin"])
+                admin_markup = types.InlineKeyboardMarkup(row_width=3)
+                cur.execute(f"SELECT user_name, phone_number FROM canteen WHERE user_id = {userid};")
+                user = cur.fetchone()
+                user_info = list(filter(None, user))[0]
+                admin_markup.add(types.InlineKeyboardButton(text=user_info, callback_data=user_info))
+                await bot.send_message(admins[0], admin_fin_mes, parse_mode='html', reply_markup=admin_markup)
+            else:
+                final_message = "\U000026A0 Проверьте, что вы добавили блюда и указали адрес доставки (/address)"
     else:
         markup = start_menu()
         final_message = "Для совершения заказа пользуйтесь предлагаемыми кнопками и меню \U0001F601"
