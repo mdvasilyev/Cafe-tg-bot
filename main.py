@@ -1,10 +1,8 @@
-import json
-
 import pandas as pd
 import re
 import asyncio
 import psycopg2
-from psycopg2.extras import Json, DictCursor
+from psycopg2.extras import DictCursor
 import telebot
 from telebot import asyncio_filters
 from telebot.async_telebot import AsyncTeleBot
@@ -22,13 +20,6 @@ conn = psycopg2.connect(
 cur = conn.cursor(cursor_factory=DictCursor)
 
 bot = AsyncTeleBot('6049022584:AAEK8QxoT9kN0E1LTYaNhKNz4NjDdTxIdok', state_storage=StateMemoryStorage())
-
-# order = []
-# order_list = {}
-# section_stack = []
-# # dish_stack = []
-# adrs = []
-# user = []
 
 admins = [1208161291, 659350346, 669249622]
 
@@ -53,7 +44,8 @@ async def setup_bot_commands():
 
 @bot.message_handler(commands=['start'])
 async def start(message):
-    query = "INSERT INTO canteen (user_id, order_list) SELECT %s, '{}' WHERE NOT EXISTS (SELECT (user_id, order_list, courier_check) FROM canteen WHERE user_id = %s);"
+    query = "INSERT INTO canteen (user_id, order_list) SELECT %s, '{}'" \
+            "WHERE NOT EXISTS (SELECT (user_id, order_list, courier_check) FROM canteen WHERE user_id = %s);"
     data = (message.from_user.id, message.from_user.id)
     cur.execute(query, data)
     conn.commit()
@@ -111,25 +103,32 @@ async def address_get(message):
 async def admin(message):
     is_admin = message.from_user.id
     if is_admin in admins:
-        send_mess = 'Вы админ'
+        admin_markup = types.InlineKeyboardMarkup(row_width=3)
+        buttons = []
+        cur.execute("SELECT user_name FROM canteen WHERE courier_check IS FALSE;")
+        users = cur.fetchall()
+        for user in users:
+            buttons.append(types.InlineKeyboardButton(text=user[0], callback_data=user[0]))
+        admin_markup.add(*buttons)
+        await bot.send_message(admins[0], 'Список актуальных заказов', parse_mode='html', reply_markup=admin_markup)
     else:
         send_mess = 'Вы не админ'
-    await bot.send_message(message.chat.id, send_mess, parse_mode='html')
+        await bot.send_message(message.chat.id, send_mess, parse_mode='html')
 
 
-@bot.message_handler(commands=['add'])
-async def add(message):
-    send_mess = f'{message.from_user.id}'
-    await bot.send_message(message.chat.id, send_mess, parse_mode='html')
+# @bot.message_handler(commands=['add'])
+# async def add(message):
+#     send_mess = f'{message.from_user.id}'
+#     await bot.send_message(message.chat.id, send_mess, parse_mode='html')
 
 
 @bot.callback_query_handler(func=lambda call: True)
 async def callback_inline(call):
-    query = "SELECT user_id FROM canteen WHERE address = %s"
+    query = "SELECT user_id FROM canteen WHERE user_name = %s"
     data = (call.data,)
     cur.execute(query, data)
     user_id = cur.fetchone()[0]
-    set_query = "UPDATE canteen SET courier_check = NULL, order_list = '{}' WHERE address = %s"
+    set_query = "UPDATE canteen SET courier_check = NULL, order_list = '{}' WHERE user_name = %s"
     cur.execute(set_query, data)
     conn.commit()
     await bot.send_message(user_id, "Ваш заказ передан курьеру", parse_mode='html')
@@ -154,17 +153,17 @@ def start_menu():
 
 def gen_menu(dframe, dish: str):
     indexes = list(~pd.isna(dframe[dish]))
-    l = dframe[dish][indexes]
-    msg = '\n'.join(l)
+    lst = dframe[dish][indexes]
+    msg = '\n'.join(lst)
     return msg
 
 
 def gen_markup(dframe, dish: str):
     indexes = list(~pd.isna(df[dish]))
-    l = dframe[dish][indexes]
-    r_width = len(l) // 2 + len(l) % 2
+    lst = dframe[dish][indexes]
+    r_width = len(lst) // 2 + len(lst) % 2
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=r_width)
-    markup.add(*[types.KeyboardButton(f'{i + 1}') for i in range(len(l))])
+    markup.add(*[types.KeyboardButton(f'{i + 1}') for i in range(len(lst))])
     return markup
 
 
@@ -263,30 +262,29 @@ async def mess(message):
         else:
             final_message = "\U000026A0 Проверьте, что вы добавили блюда и указали адрес доставки (/address)"
     elif get_message_bot == "Завершить заказ":
-        query = "SELECT order_list FROM canteen WHERE user_id = %s;"
+        username = message.from_user.username
+        query = "SELECT order_list, address FROM canteen WHERE user_id = %s;"
         data = (userid,)
         cur.execute(query, data)
-        order_list = cur.fetchone()[0]
-        adrs_query = "SELECT address FROM canteen WHERE user_id = %s;"
-        cur.execute(adrs_query, data)
-        adrs = cur.fetchone()[0]
+        order_list, adrs = cur.fetchone()
         markup = start_menu()
         order, text = gen_order(order_list)
         if len(order) != 0 and adrs is not None:
-            query = "UPDATE canteen SET courier_check = FALSE WHERE address = %s;"
-            data = (adrs,)
+            query = "UPDATE canteen SET courier_check = FALSE, user_name = %s WHERE address = %s;"
+            data = (username, adrs)
             cur.execute(query, data)
             conn.commit()
             final_message = '\n'.join(
-                ["\U0001F37D <b>Заказ:</b>", f"{text}", "\U0001F4CD <b>Адрес и форма оплаты:</b>", adrs])
+                [f"\U0001F37D <b>Заказ:</b>", f"{text}", "\U0001F4CD <b>Адрес и форма оплаты:</b>",
+                 adrs])
+            admin_fin_mes = '\n'.join(
+                [f"\U0001F37D <b>Заказ от @{username}:</b>", f"{text}", "\U0001F4CD <b>Адрес и форма оплаты:</b>",
+                 adrs, "Чтобы посмотреть список актуальных заказов, воспользуйтесь командой /admin"])
             admin_markup = types.InlineKeyboardMarkup(row_width=3)
-            buttons = []
-            cur.execute("SELECT address FROM canteen WHERE courier_check IS FALSE;")
-            users = cur.fetchall()
-            for user in users:
-                buttons.append(types.InlineKeyboardButton(text=user[0], callback_data=user[0]))
-            admin_markup.add(*buttons)
-            await bot.send_message(admins[0], final_message, parse_mode='html', reply_markup=admin_markup)
+            cur.execute(f"SELECT user_name FROM canteen WHERE user_id = {userid};")
+            user = cur.fetchone()
+            admin_markup.add(types.InlineKeyboardButton(text=user[0], callback_data=user[0]))
+            await bot.send_message(admins[0], admin_fin_mes, parse_mode='html', reply_markup=admin_markup)
         else:
             final_message = "\U000026A0 Проверьте, что вы добавили блюда и указали адрес доставки (/address)"
     else:
