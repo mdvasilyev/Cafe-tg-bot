@@ -280,13 +280,10 @@ async def mess(message):
         markup = start_menu()
         final_message = "Отличный выбор \U0001F44D"
     elif get_message_bot == "Посмотреть заказ":
-        query = "SELECT order_list FROM canteen WHERE user_id = %s;"
+        query = "SELECT order_list, address FROM canteen WHERE user_id = %s;"
         data = (userid,)
         cur.execute(query, data)
-        order_list = cur.fetchone()[0]
-        adrs_query = "SELECT address FROM canteen WHERE user_id = %s;"
-        cur.execute(adrs_query, data)
-        adrs = cur.fetchone()[0]
+        order_list, adrs = cur.fetchone()
         markup = start_menu()
         order, text = gen_order(order_list)
         if len(order) != 0 and adrs is not None:
