@@ -9,8 +9,7 @@ from telebot.async_telebot import AsyncTeleBot
 from telebot.asyncio_storage import StateMemoryStorage
 from telebot.asyncio_handler_backends import State, StatesGroup
 from telebot import types
-
-# from tabulate import tabulate
+from tabulate import tabulate
 
 conn = psycopg2.connect(
     database='postgres',
@@ -40,7 +39,7 @@ async def setup_bot_commands():
         telebot.types.BotCommand("/start", "Начальная страница"),
         telebot.types.BotCommand("/address", "Ввести адрес и оплату"),
         telebot.types.BotCommand("/phone", "Ввести номер телефона"),
-        telebot.types.BotCommand("/vk", "Ссылка на группу ВК")
+        telebot.types.BotCommand("/group", "Перейти в группу")
     ]
     await bot.set_my_commands(bot_commands)
 
@@ -58,19 +57,12 @@ async def start(message):
     await bot.send_message(message.chat.id, send_mess, parse_mode='html', reply_markup=markup)
 
 
-@bot.message_handler(commands=['vk'])
-async def vk(message):
+@bot.message_handler(commands=['group'])
+async def group(message):
     markup = types.InlineKeyboardMarkup()
-    markup.add(types.InlineKeyboardButton("Посетить группу Вк", url="https://ru.wikipedia.org/wiki/%D0%A1%D1%82%D0%BE"
-                                                                    "%D0%BB%D0%BE%D0%B2%D0%B0%D1%8F"))
-    await bot.send_message(message.chat.id, "Нажмите на кнопку ниже и посетите нашу группу Вк",
+    markup.add(types.InlineKeyboardButton("Посетить группу", url="https://t.me/joinchat/QHX1AfluPjlkYThi"))
+    await bot.send_message(message.chat.id, "Нажмите на кнопку ниже, чтобы перейти в группу",
                            parse_mode='html', reply_markup=markup)
-
-
-# @bot.message_handler(commands=['phone'])
-# async def phone(message):
-#     await bot.send_message(message.chat.id, "Вы можете связаться с нами по телефону: <i>+7(123)456-78-90</i>",
-#                            parse_mode='html')
 
 
 @bot.message_handler(commands=['address'])
@@ -101,11 +93,19 @@ async def phone(message):
 
 @bot.message_handler(state=MyStates.phone)
 async def phone_number_get(message):
+    raw_phone = str(message.text)
+    if raw_phone.startswith('+7'):
+        phone_number = raw_phone
+    elif raw_phone.startswith('7'):
+        phone_number = '+' + raw_phone
+    elif raw_phone.startswith('8'):
+        phone_number = '+7' + raw_phone[1:]
+    else:
+        phone_number = '+7' + raw_phone
     query = "UPDATE canteen SET phone_number = %s WHERE user_id = %s;"
-    data = (message.text, message.from_user.id)
+    data = (phone_number, message.from_user.id)
     cur.execute(query, data)
     conn.commit()
-    phone_number = message.text
     markup = start_menu()
     await bot.send_message(message.chat.id, f"Записал ваш номер телефона:\n<b>{phone_number}</b>"
                                             f"\nМожете продолжить оформление заказа или завершить его",
@@ -113,10 +113,32 @@ async def phone_number_get(message):
     await bot.delete_state(message.from_user.id, message.chat.id)
 
 
+# def test_gen_menu(dframe, dish: str):
+#     indexes = list(~pd.isna(dframe[dish]))
+#     lst = dframe[dish][indexes]
+#     arr = []
+#     for i, _ in enumerate(lst):
+#         string = lst[i]
+#         result = re.search(', \d+р.', string).group()
+#         string = string.replace(result, '')
+#         result = result.replace(', ', '')
+#         arr.append([string, result])
+#     message = tabulate(arr, headers=['Блюдо', 'Цена'], tablefmt='plain', showindex='never')
+#     mes = tabulate(((11111111111111, 21), (4, 1)), headers=['Блюдо', 'Цена'], tablefmt='plain', showindex='never',
+#                    numalign="right", disable_numparse=True, colalign=("right",), maxcolwidths=[8, 8])
+#     ms = pd.DataFrame(arr).to_html(index=False)
+#     return ms
+
+
 # @bot.message_handler(commands=['test'])
 # async def test(message):
-#     result = message.from_user
+#     result = test_gen_menu(df, 'Салаты')
 #     await bot.send_message(message.chat.id, result, parse_mode='html')
+
+@bot.message_handler(commands=['test'])
+async def test(message):
+    result = message.chat
+    await bot.send_message(message.chat.id, result, parse_mode='html')
 
 
 @bot.message_handler(commands=['admin'])
@@ -130,17 +152,11 @@ async def admin(message):
         for user in users:
             buttons.append(types.InlineKeyboardButton(text=user[0], callback_data=user[0]))
         admin_markup.add(*buttons)
-        await bot.send_message(admins[0], '\U0001F4C4 Список актуальных заказов', parse_mode='html',
+        await bot.send_message(admins[1], '\U0001F4C4 Список актуальных заказов', parse_mode='html',
                                reply_markup=admin_markup)
     else:
         send_mess = 'Вы не админ'
         await bot.send_message(message.chat.id, send_mess, parse_mode='html')
-
-
-# @bot.message_handler(commands=['add'])
-# async def add(message):
-#     send_mess = f'{message.from_user.id}'
-#     await bot.send_message(message.chat.id, send_mess, parse_mode='html')
 
 
 @bot.callback_query_handler(func=lambda call: True)
@@ -312,7 +328,8 @@ async def mess(message):
                 cur.execute(query, data)
                 conn.commit()
                 final_message = '\n'.join(
-                    [f"\U0001F37D <b>Заказ:</b>", f"{text}", "\U0001F4CD <b>Адрес и форма оплаты:</b>",
+                    ["Ваш заказ принят\n", f"\U0001F37D <b>Заказ:</b>", f"{text}",
+                     "\U0001F4CD <b>Адрес и форма оплаты:</b>",
                      adrs])
                 if username is not None:
                     admin_fin_mes = '\n'.join(
@@ -329,12 +346,12 @@ async def mess(message):
                 user = cur.fetchone()
                 user_info = list(filter(None, user))[0]
                 admin_markup.add(types.InlineKeyboardButton(text=user_info, callback_data=user_info))
-                await bot.send_message(admins[0], admin_fin_mes, parse_mode='html', reply_markup=admin_markup)
+                await bot.send_message(admins[1], admin_fin_mes, parse_mode='html', reply_markup=admin_markup)
             else:
                 final_message = "\U000026A0 Проверьте, что вы добавили блюда и указали адрес доставки (/address)"
     else:
         markup = start_menu()
-        final_message = "Для совершения заказа пользуйтесь предлагаемыми кнопками и меню \U0001F601"
+        final_message = "Для совершения заказа пользуйтесь предлагаемыми кнопками и меню \U0001F916"
     await bot.send_message(userid, final_message, parse_mode='html', reply_markup=markup)
 
 
