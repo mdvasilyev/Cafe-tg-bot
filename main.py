@@ -23,7 +23,7 @@ cur = conn.cursor(cursor_factory=DictCursor)
 bot = AsyncTeleBot('6049022584:AAEK8QxoT9kN0E1LTYaNhKNz4NjDdTxIdok', state_storage=StateMemoryStorage())
 
 admins = [1208161291, 659350346, 669249622]
-
+actual_admin = admins[1]
 df = pd.read_excel('dishes.xlsx')
 max_dish = len(df)
 
@@ -152,7 +152,7 @@ async def admin(message):
         for user in users:
             buttons.append(types.InlineKeyboardButton(text=user[0], callback_data=user[0]))
         admin_markup.add(*buttons)
-        await bot.send_message(admins[1], '\U0001F4C4 Список актуальных заказов', parse_mode='html',
+        await bot.send_message(actual_admin, '\U0001F4C4 Список актуальных заказов', parse_mode='html',
                                reply_markup=admin_markup)
     else:
         send_mess = 'Вы не админ'
@@ -346,7 +346,7 @@ async def mess(message):
                 user = cur.fetchone()
                 user_info = list(filter(None, user))[0]
                 admin_markup.add(types.InlineKeyboardButton(text=user_info, callback_data=user_info))
-                await bot.send_message(admins[1], admin_fin_mes, parse_mode='html', reply_markup=admin_markup)
+                await bot.send_message(actual_admin, admin_fin_mes, parse_mode='html', reply_markup=admin_markup)
             else:
                 final_message = "\U000026A0 Проверьте, что вы добавили блюда и указали адрес доставки (/address)"
     else:
