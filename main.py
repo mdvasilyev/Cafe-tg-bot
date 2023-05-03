@@ -13,19 +13,19 @@ from telebot import types
 # from tabulate import tabulate
 
 conn = psycopg2.connect(
-    database='postgres',
-    user='postgres',
-    password='postgres',
-    host='localhost',
-    port='5432'
+    database="postgres",
+    user="postgres",
+    password="postgres",
+    host="localhost",
+    port="5432"
 )
 cur = conn.cursor(cursor_factory=DictCursor)
 
-bot = AsyncTeleBot('6049022584:AAEK8QxoT9kN0E1LTYaNhKNz4NjDdTxIdok', state_storage=StateMemoryStorage())
+bot = AsyncTeleBot("6049022584:AAEK8QxoT9kN0E1LTYaNhKNz4NjDdTxIdok", state_storage=StateMemoryStorage())
 
 admins = [1208161291, 659350346]
 actual_admin = admins[1]
-df = pd.read_excel('dishes.xlsx')
+df = pd.read_excel("dishes.xlsx")
 max_dish = len(df)
 
 
@@ -45,7 +45,7 @@ async def setup_bot_commands():
     await bot.set_my_commands(bot_commands)
 
 
-@bot.message_handler(commands=['start'])
+@bot.message_handler(commands=["start"])
 async def start(message):
     query = "INSERT INTO canteen (user_id, order_list) SELECT %s, '{}'" \
             "WHERE NOT EXISTS (SELECT (user_id, order_list, courier_check) FROM canteen WHERE user_id = %s);"
@@ -55,21 +55,21 @@ async def start(message):
     markup = start_menu()
     send_mess = f"Привет, <b>{message.from_user.first_name}</b>!\nЯ бот \U0001F916, который поможет " \
                 f"тебе сделать заказ \U0001F4C4. Пользуйся меню с командами и кнопками ниже \U0001F447"
-    await bot.send_message(message.chat.id, send_mess, parse_mode='html', reply_markup=markup)
+    await bot.send_message(message.chat.id, send_mess, parse_mode="html", reply_markup=markup)
 
 
-@bot.message_handler(commands=['group'])
+@bot.message_handler(commands=["group"])
 async def group(message):
     markup = types.InlineKeyboardMarkup()
     markup.add(types.InlineKeyboardButton("Посетить группу", url="https://t.me/joinchat/QHX1AfluPjlkYThi"))
     await bot.send_message(message.chat.id, "Нажмите на кнопку ниже, чтобы перейти в группу",
-                           parse_mode='html', reply_markup=markup)
+                           parse_mode="html", reply_markup=markup)
 
 
-@bot.message_handler(commands=['address'])
+@bot.message_handler(commands=["address"])
 async def address(message):
     await bot.set_state(message.from_user.id, MyStates.address, message.chat.id)
-    await bot.send_message(message.chat.id, 'Напишите адрес и форму оплаты')
+    await bot.send_message(message.chat.id, "Напишите адрес и форму оплаты")
 
 
 @bot.message_handler(state=MyStates.address)
@@ -86,10 +86,10 @@ async def address_get(message):
     await bot.delete_state(message.from_user.id, message.chat.id)
 
 
-@bot.message_handler(commands=['phone'])
+@bot.message_handler(commands=["phone"])
 async def phone(message):
     await bot.set_state(message.from_user.id, MyStates.phone, message.chat.id)
-    await bot.send_message(message.chat.id, 'Напишите номер телефона в формате +7xxxxxxxxxx')
+    await bot.send_message(message.chat.id, "Напишите ваш номер телефона")
 
 
 @bot.message_handler(state=MyStates.phone)
@@ -137,13 +137,13 @@ async def phone_number_get(message):
 #     result = test_gen_menu(df, 'Салаты')
 #     await bot.send_message(message.chat.id, result, parse_mode='html')
 
-@bot.message_handler(commands=['test'])
+@bot.message_handler(commands=["test"])
 async def test(message):
     result = message.chat
-    await bot.send_message(message.chat.id, result, parse_mode='html')
+    await bot.send_message(message.chat.id, result, parse_mode="html")
 
 
-@bot.message_handler(commands=['admin'])
+@bot.message_handler(commands=["admin"])
 async def admin(message):
     is_admin = message.from_user.id
     if is_admin in admins:
@@ -154,11 +154,11 @@ async def admin(message):
         for user in users:
             buttons.append(types.InlineKeyboardButton(text=user[0], callback_data=user[0]))
         admin_markup.add(*buttons)
-        await bot.send_message(actual_admin, '\U0001F4C4 Список актуальных заказов', parse_mode='html',
+        await bot.send_message(actual_admin, "\U0001F4C4 Список актуальных заказов", parse_mode="html",
                                reply_markup=admin_markup)
     else:
-        send_mess = 'Вы не админ'
-        await bot.send_message(message.chat.id, send_mess, parse_mode='html')
+        send_mess = "Вы не админ"
+        await bot.send_message(message.chat.id, send_mess, parse_mode="html")
 
 
 @bot.callback_query_handler(func=lambda call: True)
@@ -175,21 +175,21 @@ async def callback_inline(call):
     set_data = (user_id,)
     cur.execute(set_query, set_data)
     conn.commit()
-    await bot.send_message(user_id, "Ваш заказ передан курьеру", parse_mode='html')
+    await bot.send_message(user_id, "Ваш заказ передан курьеру", parse_mode="html")
 
 
 def start_menu():
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=3)
-    btn1 = types.KeyboardButton('Салаты')
-    btn2 = types.KeyboardButton('Супы')
-    btn3 = types.KeyboardButton('Горячее')
-    btn4 = types.KeyboardButton('Гарнир')
-    btn5 = types.KeyboardButton('Пицца и хачапури из печи')
-    btn6 = types.KeyboardButton('Выпечка')
-    btn7 = types.KeyboardButton('Десерты')
-    btn8 = types.KeyboardButton('Напитки')
-    btn9 = types.KeyboardButton('Посмотреть заказ')
-    btn10 = types.KeyboardButton('Завершить заказ')
+    btn1 = types.KeyboardButton("Салаты")
+    btn2 = types.KeyboardButton("Супы")
+    btn3 = types.KeyboardButton("Горячее")
+    btn4 = types.KeyboardButton("Гарнир")
+    btn5 = types.KeyboardButton("Пицца и хачапури из печи")
+    btn6 = types.KeyboardButton("Выпечка")
+    btn7 = types.KeyboardButton("Десерты")
+    btn8 = types.KeyboardButton("Напитки")
+    btn9 = types.KeyboardButton("Посмотреть заказ")
+    btn10 = types.KeyboardButton("Завершить заказ")
     markup.add(btn1, btn2, btn3, btn4, btn5, btn6, btn7, btn8)
     markup.add(btn9, btn10)
     return markup
@@ -198,7 +198,7 @@ def start_menu():
 def gen_menu(dframe, dish: str):
     indexes = list(~pd.isna(dframe[dish]))
     lst = dframe[dish][indexes]
-    msg = '\n'.join(lst)
+    msg = "\n".join(lst)
     return msg
 
 
@@ -207,7 +207,7 @@ def gen_markup(dframe, dish: str):
     lst = dframe[dish][indexes]
     r_width = len(lst) // 2 + len(lst) % 2
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=r_width)
-    markup.add(*[types.KeyboardButton(f'{i + 1}') for i in range(len(lst))])
+    markup.add(*[types.KeyboardButton(f"{i + 1}") for i in range(len(lst))])
     return markup
 
 
@@ -216,10 +216,10 @@ def gen_order(order_list: dict):
     price = 0
     for i, j in order_list.items():
         if j != 0:
-            price += int(re.search(r', (\d+?)р.', i).group()[2:-2]) * j
-            part_to_remove = re.search(r'\d+. ', i).group()
-            order.append(' '.join([i.replace(part_to_remove, ''), f'{str(j)} шт']))
-    text = '\n'.join(order) + f'\n\U0001F4B0<b>Итого (без упаковки):</b> {price}р.'
+            price += int(re.search(r", (\d+?)р.", i).group()[2:-2]) * j
+            part_to_remove = re.search(r"\d+. ", i).group()
+            order.append(' '.join([i.replace(part_to_remove, ''), f"{str(j)} шт"]))
+    text = "\n".join(order) + f"\n\U0001F4B0<b>Итого (без упаковки):</b> {price}р."
     # for i, j in order_list.items():
     #     if j != 0:
     #         price += int(re.search(r', (\d+?)р.', i).group()[2:-2]) * j
@@ -232,9 +232,9 @@ def gen_order(order_list: dict):
 
 def make_order():
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
-    btn1 = types.KeyboardButton('Добавить в заказ')
-    btn2 = types.KeyboardButton('Отмена')
-    btn3 = types.KeyboardButton('Вернуться к списку блюд')
+    btn1 = types.KeyboardButton("Добавить в заказ")
+    btn2 = types.KeyboardButton("Отмена")
+    btn3 = types.KeyboardButton("Вернуться к списку блюд")
     markup.add(btn1, btn2)
     markup.add(btn3)
     return markup
@@ -242,12 +242,12 @@ def make_order():
 
 def number_of_dishes():
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=3)
-    markup.add(*[types.KeyboardButton(f'{i + 1} шт') for i in range(6)])
-    markup.add(types.KeyboardButton('Отмена'))
+    markup.add(*[types.KeyboardButton(f"{i + 1} шт") for i in range(6)])
+    markup.add(types.KeyboardButton("Отмена"))
     return markup
 
 
-@bot.message_handler(content_types=['text'])
+@bot.message_handler(content_types=["text"])
 async def mess(message):
     userid = message.chat.id
     get_message_bot = message.text.strip()
@@ -286,7 +286,7 @@ async def mess(message):
         markup.add(types.KeyboardButton("Вернуться к списку блюд"))
         final_message = "Может что-нибудь другое?"
     elif len(get_message_bot) <= 5 and "шт" in get_message_bot:
-        number = int(get_message_bot.replace('шт', ''))
+        number = int(get_message_bot.replace("шт", ''))
         query = "SELECT dish_stack FROM canteen WHERE user_id = %s;"
         data = (userid,)
         cur.execute(query, data)
@@ -305,7 +305,7 @@ async def mess(message):
         markup = start_menu()
         order, text = gen_order(order_list)
         if len(order) != 0 and adrs is not None:
-            final_message = '\n'.join(
+            final_message = "\n".join(
                 ["\U0001F37D <b>Заказ:</b>", f"{text}", "\U0001F4CD<b>Адрес и форма оплаты:</b>", adrs])
         else:
             final_message = "\U000026A0 Проверьте, что вы добавили блюда и указали адрес доставки (/address)"
@@ -329,17 +329,17 @@ async def mess(message):
                 data = (username, adrs)
                 cur.execute(query, data)
                 conn.commit()
-                final_message = '\n'.join(
+                final_message = "\n".join(
                     ["Ваш заказ принят\n", f"\U0001F37D <b>Заказ:</b>", f"{text}",
                      "\U0001F4CD <b>Адрес и форма оплаты:</b>",
                      adrs])
                 if username is not None:
-                    admin_fin_mes = '\n'.join(
+                    admin_fin_mes = "\n".join(
                         [f"\U0001F37D <b>Заказ от @{username}:</b>", f"{text}",
                          "\U0001F4CD <b>Адрес и форма оплаты:</b>", adrs,
                          "Чтобы посмотреть список актуальных заказов, воспользуйтесь командой /admin"])
                 else:
-                    admin_fin_mes = '\n'.join(
+                    admin_fin_mes = "\n".join(
                         [f"\U0001F37D <b>Заказ от t.me/{phone_number}:</b>", f"{text}",
                          "\U0001F4CD <b>Адрес и форма оплаты:</b>", adrs,
                          "Чтобы посмотреть список актуальных заказов, воспользуйтесь командой /admin"])
@@ -348,13 +348,13 @@ async def mess(message):
                 user = cur.fetchone()
                 user_info = list(filter(None, user))[0]
                 admin_markup.add(types.InlineKeyboardButton(text=user_info, callback_data=user_info))
-                await bot.send_message(actual_admin, admin_fin_mes, parse_mode='html', reply_markup=admin_markup)
+                await bot.send_message(actual_admin, admin_fin_mes, parse_mode="html", reply_markup=admin_markup)
             else:
                 final_message = "\U000026A0 Проверьте, что вы добавили блюда и указали адрес доставки (/address)"
     else:
         markup = start_menu()
         final_message = "Для совершения заказа пользуйтесь предлагаемыми кнопками и меню \U0001F916"
-    await bot.send_message(userid, final_message, parse_mode='html', reply_markup=markup)
+    await bot.send_message(userid, final_message, parse_mode="html", reply_markup=markup)
 
 
 bot.add_custom_filter(asyncio_filters.StateFilter(bot))
