@@ -309,12 +309,12 @@ async def mess(message):
         query = "SELECT order_list, address FROM canteen WHERE user_id = %s;"
         data = (userid,)
         cur.execute(query, data)
-        order_list, adrs = cur.fetchone()
+        order_list, addr = cur.fetchone()
         markup = start_menu()
         order, text = gen_order(order_list)
-        if len(order) != 0 and adrs is not None:
+        if len(order) != 0 and addr is not None:
             final_message = "\n".join(
-                ["\U0001F37D <b>Заказ:</b>", f"{text}", "\U0001F4CD<b>Адрес и форма оплаты:</b>", adrs])
+                ["\U0001F37D <b>Заказ:</b>", f"{text}", "\U0001F4CD<b>Адрес и форма оплаты:</b>", addr])
         else:
             final_message = "\U000026A0 Проверьте, что вы добавили блюда и указали адрес доставки (/address)"
     elif get_message_bot == "Завершить заказ":
@@ -330,26 +330,26 @@ async def mess(message):
             query = "SELECT order_list, address FROM canteen WHERE user_id = %s;"
             data = (userid,)
             cur.execute(query, data)
-            order_list, adrs = cur.fetchone()
+            order_list, addr = cur.fetchone()
             order, text = gen_order(order_list)
-            if len(order) != 0 and adrs is not None:
+            if len(order) != 0 and addr is not None:
                 query = "UPDATE canteen SET courier_check = FALSE, user_name = %s WHERE address = %s;"
-                data = (username, adrs)
+                data = (username, addr)
                 cur.execute(query, data)
                 conn.commit()
                 final_message = "\n".join(
                     ["Ваш заказ принят\n", f"\U0001F37D <b>Заказ:</b>", f"{text}",
                      "\U0001F4CD <b>Адрес и форма оплаты:</b>",
-                     adrs])
+                     addr])
                 if username is not None:
                     admin_fin_mes = "\n".join(
                         [f"\U0001F37D <b>Заказ от @{username}:</b>", f"{text}",
-                         "\U0001F4CD <b>Адрес и форма оплаты:</b>", adrs,
+                         "\U0001F4CD <b>Адрес и форма оплаты:</b>", addr,
                          "Чтобы посмотреть список актуальных заказов, воспользуйтесь командой /admin"])
                 else:
                     admin_fin_mes = "\n".join(
                         [f"\U0001F37D <b>Заказ от t.me/{phone_number}:</b>", f"{text}",
-                         "\U0001F4CD <b>Адрес и форма оплаты:</b>", adrs,
+                         "\U0001F4CD <b>Адрес и форма оплаты:</b>", addr,
                          "Чтобы посмотреть список актуальных заказов, воспользуйтесь командой /admin"])
                 admin_markup = types.InlineKeyboardMarkup(row_width=3)
                 cur.execute(f"SELECT user_name, phone_number FROM canteen WHERE user_id = {userid};")
