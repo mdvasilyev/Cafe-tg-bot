@@ -25,7 +25,7 @@ cur = conn.cursor(cursor_factory=DictCursor)
 bot = AsyncTeleBot("6049022584:AAEK8QxoT9kN0E1LTYaNhKNz4NjDdTxIdok", state_storage=StateMemoryStorage())
 
 admins = [1208161291, 659350346]
-actual_admin = admins[1]
+actual_admin = admins[0]
 df = pd.read_excel("dishes.xlsx")
 max_dish = len(df)
 
@@ -62,11 +62,7 @@ async def start(message):
 
 @bot.message_handler(commands=["menu"])
 async def menu(message):
-    date = datetime.date.today()
-    date = list(str(date)[2:])
-    date[0], date[-2] = date[-2], date[0]
-    date[1], date[-1] = date[-1], date[1]
-    date = ''.join(date).replace('-', '.')
+    date = datetime.date.today().strftime("%d.%m.%y")
     sections = df[:0].columns.values
     whole_menu = []
     for i in sections:
