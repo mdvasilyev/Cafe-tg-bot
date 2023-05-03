@@ -47,7 +47,7 @@ async def setup_bot_commands():
     await bot.set_my_commands(bot_commands)
 
 
-@bot.message_handler(commands=["start"])
+@bot.message_handler(commands=["start", "help"])
 async def start(message):
     query = "INSERT INTO canteen (user_id, order_list) SELECT %s, '{}'" \
             "WHERE NOT EXISTS (SELECT (user_id, order_list, courier_check) FROM canteen WHERE user_id = %s);"
