@@ -9,6 +9,7 @@ from telebot.async_telebot import AsyncTeleBot
 from telebot.asyncio_storage import StateMemoryStorage
 from telebot.asyncio_handler_backends import State, StatesGroup
 from telebot import types
+import datetime
 
 # from tabulate import tabulate
 
@@ -38,6 +39,7 @@ async def setup_bot_commands():
     await bot.delete_my_commands()
     bot_commands = [
         telebot.types.BotCommand("/start", "Начальная страница"),
+        telebot.types.BotCommand("/menu", "Посмотреть меню"),
         telebot.types.BotCommand("/address", "Ввести адрес и оплату"),
         telebot.types.BotCommand("/phone", "Ввести номер телефона"),
         telebot.types.BotCommand("/group", "Перейти в группу")
@@ -58,12 +60,20 @@ async def start(message):
     await bot.send_message(message.chat.id, send_mess, parse_mode="html", reply_markup=markup)
 
 
-@bot.message_handler(commands=["group"])
-async def group(message):
-    markup = types.InlineKeyboardMarkup()
-    markup.add(types.InlineKeyboardButton("Посетить группу", url="https://t.me/joinchat/QHX1AfluPjlkYThi"))
-    await bot.send_message(message.chat.id, "Нажмите на кнопку ниже, чтобы перейти в группу",
-                           parse_mode="html", reply_markup=markup)
+@bot.message_handler(commands=["menu"])
+async def menu(message):
+    date = datetime.date.today()
+    date = list(str(date)[2:])
+    date[0], date[-2] = date[-2], date[0]
+    date[1], date[-1] = date[-1], date[1]
+    date = ''.join(date).replace('-', '.')
+    sections = df[:0].columns.values
+    whole_menu = []
+    for i in sections:
+        whole_menu.append(i)
+        whole_menu.append(gen_menu(df, i))
+    result = "\n\n".join([f"Меню на <b>{date}</b>", "\n\n".join(whole_menu)])
+    await bot.send_message(message.chat.id, result, parse_mode="html")
 
 
 @bot.message_handler(commands=["address"])
@@ -115,32 +125,12 @@ async def phone_number_get(message):
     await bot.delete_state(message.from_user.id, message.chat.id)
 
 
-# def test_gen_menu(dframe, dish: str):
-#     indexes = list(~pd.isna(dframe[dish]))
-#     lst = dframe[dish][indexes]
-#     arr = []
-#     for i, _ in enumerate(lst):
-#         string = lst[i]
-#         result = re.search(', \d+р.', string).group()
-#         string = string.replace(result, '')
-#         result = result.replace(', ', '')
-#         arr.append([string, result])
-#     message = tabulate(arr, headers=['Блюдо', 'Цена'], tablefmt='plain', showindex='never')
-#     mes = tabulate(((11111111111111, 21), (4, 1)), headers=['Блюдо', 'Цена'], tablefmt='plain', showindex='never',
-#                    numalign="right", disable_numparse=True, colalign=("right",), maxcolwidths=[8, 8])
-#     ms = pd.DataFrame(arr).to_html(index=False)
-#     return ms
-
-
-# @bot.message_handler(commands=['test'])
-# async def test(message):
-#     result = test_gen_menu(df, 'Салаты')
-#     await bot.send_message(message.chat.id, result, parse_mode='html')
-
-@bot.message_handler(commands=["test"])
-async def test(message):
-    result = message.chat
-    await bot.send_message(message.chat.id, result, parse_mode="html")
+@bot.message_handler(commands=["group"])
+async def group(message):
+    markup = types.InlineKeyboardMarkup()
+    markup.add(types.InlineKeyboardButton("Посетить группу", url="https://t.me/joinchat/QHX1AfluPjlkYThi"))
+    await bot.send_message(message.chat.id, "Нажмите на кнопку ниже, чтобы перейти в группу",
+                           parse_mode="html", reply_markup=markup)
 
 
 @bot.message_handler(commands=["admin"])
@@ -159,6 +149,28 @@ async def admin(message):
     else:
         send_mess = "Вы не админ"
         await bot.send_message(message.chat.id, send_mess, parse_mode="html")
+
+
+# def test_gen_menu(dframe, dish: str):
+#     indexes = list(~pd.isna(dframe[dish]))
+#     lst = dframe[dish][indexes]
+#     arr = []
+#     for i, _ in enumerate(lst):
+#         string = lst[i]
+#         result = re.search(', \d+р.', string).group()
+#         string = string.replace(result, '')
+#         result = result.replace(', ', '')
+#         arr.append([string, result])
+#     message = tabulate(arr, headers=['Блюдо', 'Цена'], tablefmt='plain', showindex='never')
+#     mes = tabulate(((11111111111111, 21), (4, 1)), headers=['Блюдо', 'Цена'], tablefmt='plain', showindex='never',
+#                    numalign="right", disable_numparse=True, colalign=("right",), maxcolwidths=[8, 8])
+#     ms = pd.DataFrame(arr).to_html(index=False)
+#     return ms
+
+# @bot.message_handler(commands=["test"])
+# async def test(message):
+#     result = message.chat
+#     await bot.send_message(message.chat.id, result, parse_mode="html")
 
 
 @bot.callback_query_handler(func=lambda call: True)
