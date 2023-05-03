@@ -9,7 +9,8 @@ from telebot.async_telebot import AsyncTeleBot
 from telebot.asyncio_storage import StateMemoryStorage
 from telebot.asyncio_handler_backends import State, StatesGroup
 from telebot import types
-from tabulate import tabulate
+
+# from tabulate import tabulate
 
 conn = psycopg2.connect(
     database='postgres',
@@ -22,7 +23,7 @@ cur = conn.cursor(cursor_factory=DictCursor)
 
 bot = AsyncTeleBot('6049022584:AAEK8QxoT9kN0E1LTYaNhKNz4NjDdTxIdok', state_storage=StateMemoryStorage())
 
-admins = [1208161291, 659350346, 669249622]
+admins = [1208161291, 659350346]
 actual_admin = admins[1]
 df = pd.read_excel('dishes.xlsx')
 max_dish = len(df)
@@ -94,14 +95,15 @@ async def phone(message):
 @bot.message_handler(state=MyStates.phone)
 async def phone_number_get(message):
     raw_phone = str(message.text)
-    if raw_phone.startswith('+7'):
+    raw_phone.replace('-', '').replace('.', '').replace(' ', '')
+    if raw_phone.startswith("+7"):
         phone_number = raw_phone
     elif raw_phone.startswith('7'):
-        phone_number = '+' + raw_phone
+        phone_number = f"+{raw_phone}"
     elif raw_phone.startswith('8'):
-        phone_number = '+7' + raw_phone[1:]
+        phone_number = f"+7{raw_phone[1:]}"
     else:
-        phone_number = '+7' + raw_phone
+        phone_number = f"+7{raw_phone}"
     query = "UPDATE canteen SET phone_number = %s WHERE user_id = %s;"
     data = (phone_number, message.from_user.id)
     cur.execute(query, data)
