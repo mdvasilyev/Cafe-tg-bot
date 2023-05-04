@@ -11,8 +11,6 @@ from telebot.asyncio_handler_backends import State, StatesGroup
 from telebot import types
 import datetime
 
-# from tabulate import tabulate
-
 conn = psycopg2.connect(
     database="postgres",
     user="postgres",
@@ -145,28 +143,6 @@ async def admin(message):
     else:
         send_mess = "Вы не админ"
         await bot.send_message(message.chat.id, send_mess, parse_mode="html")
-
-
-# def test_gen_menu(dframe, dish: str):
-#     indexes = list(~pd.isna(dframe[dish]))
-#     lst = dframe[dish][indexes]
-#     arr = []
-#     for i, _ in enumerate(lst):
-#         string = lst[i]
-#         result = re.search(', \d+р.', string).group()
-#         string = string.replace(result, '')
-#         result = result.replace(', ', '')
-#         arr.append([string, result])
-#     message = tabulate(arr, headers=['Блюдо', 'Цена'], tablefmt='plain', showindex='never')
-#     mes = tabulate(((11111111111111, 21), (4, 1)), headers=['Блюдо', 'Цена'], tablefmt='plain', showindex='never',
-#                    numalign="right", disable_numparse=True, colalign=("right",), maxcolwidths=[8, 8])
-#     ms = pd.DataFrame(arr).to_html(index=False)
-#     return ms
-
-# @bot.message_handler(commands=["test"])
-# async def test(message):
-#     result = message.chat
-#     await bot.send_message(message.chat.id, result, parse_mode="html")
 
 
 @bot.callback_query_handler(func=lambda call: True)
@@ -434,6 +410,23 @@ async def sticker(message):
     sti = open("batman-emblem.webp", 'rb')
     await bot.reply_to(message, final_message, parse_mode="html", reply_markup=markup)
     await bot.send_sticker(message.chat.id, sti)
+
+
+# @bot.message_handler(
+#     commands=["text", "audio", "photo", "voice", "video", "document", "location", "contact", "sticker"])
+# async def emergency_content(message):
+#     text = "Извините, сейчас бот не работает, обращайтесь напрямую в группу"
+#     markup = types.InlineKeyboardMarkup()
+#     markup.add(types.InlineKeyboardButton("Посетить группу", url="https://t.me/joinchat/QHX1AfluPjlkYThi"))
+#     await bot.send_message(message.chat.id, text, parse_mode="html", reply_markup=markup)
+#
+#
+# @bot.message_handler(commands=["start", "help", "menu", "address", "phone", "group", "admin"])
+# async def emergency_commands(message):
+#     text = "Извините, сейчас бот не работает, обращайтесь напрямую в группу"
+#     markup = types.InlineKeyboardMarkup()
+#     markup.add(types.InlineKeyboardButton("Посетить группу", url="https://t.me/joinchat/QHX1AfluPjlkYThi"))
+#     await bot.send_message(message.chat.id, text, parse_mode="html", reply_markup=markup)
 
 
 bot.add_custom_filter(asyncio_filters.StateFilter(bot))
