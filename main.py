@@ -258,7 +258,7 @@ def number_of_dishes():
 @bot.message_handler(content_types=["text"])
 async def mess(message):
     userid = message.chat.id
-    get_message_bot = message.text.strip()
+    get_message_bot = str(message.text.strip())
     if get_message_bot == "Вернуться к списку блюд":
         markup = start_menu()
         final_message = "Хочешь выбрать что-то ещё?"
@@ -270,18 +270,23 @@ async def mess(message):
         markup = gen_markup(df, get_message_bot)
         markup.add(types.KeyboardButton("Вернуться к списку блюд"))
         final_message = gen_menu(df, get_message_bot)
-    elif len(get_message_bot) <= 2 and int(get_message_bot) in range(1, max_dish + 1):
+    elif get_message_bot.isnumeric():
         query = "SELECT section_stack FROM canteen WHERE user_id = %s;"
         data = (userid,)
         cur.execute(query, data)
         section = cur.fetchone()[0]
-        dish = df[section][int(get_message_bot) - 1]
-        dish_query = "UPDATE canteen SET dish_stack = %s WHERE user_id = %s;"
-        dish_data = (dish, userid)
-        cur.execute(dish_query, dish_data)
-        conn.commit()
-        markup = make_order()
-        final_message = f"{dish}\nДобавляем в заказ?"
+        actual_positions = [i for i, j in zip(range(1, max_dish + 1), list(pd.isna(df[section]))) if j is False]
+        if int(get_message_bot) in actual_positions:
+            dish = df[section][int(get_message_bot) - 1]
+            dish_query = "UPDATE canteen SET dish_stack = %s WHERE user_id = %s;"
+            dish_data = (dish, userid)
+            cur.execute(dish_query, dish_data)
+            conn.commit()
+            markup = make_order()
+            final_message = f"{dish}\nДобавляем в заказ?"
+        else:
+            markup = start_menu()
+            final_message = "Кажется, такой позиции нет в меню"
     elif get_message_bot == "Добавить в заказ":
         markup = number_of_dishes()
         final_message = "Выберите количество"
@@ -363,6 +368,71 @@ async def mess(message):
         markup = start_menu()
         final_message = "Для совершения заказа пользуйтесь предлагаемыми кнопками и меню \U0001F916"
     await bot.send_message(userid, final_message, parse_mode="html", reply_markup=markup)
+
+
+@bot.message_handler(content_types=["audio"])
+async def audio(message):
+    userid = message.chat.id
+    markup = start_menu()
+    final_message = "\U0001F916 Классный трек"
+    await bot.send_message(userid, final_message, parse_mode="html", reply_markup=markup)
+
+
+@bot.message_handler(content_types=["photo"])
+async def photo(message):
+    userid = message.chat.id
+    markup = start_menu()
+    final_message = "\U0001F916 Классное фото"
+    await bot.send_message(userid, final_message, parse_mode="html", reply_markup=markup)
+
+
+@bot.message_handler(content_types=["voice"])
+async def voice(message):
+    userid = message.chat.id
+    markup = start_menu()
+    final_message = "\U0001F916 Классный голос"
+    await bot.send_message(userid, final_message, parse_mode="html", reply_markup=markup)
+
+
+@bot.message_handler(content_types=["video"])
+async def video(message):
+    userid = message.chat.id
+    markup = start_menu()
+    final_message = "\U0001F916 Классное видео"
+    await bot.send_message(userid, final_message, parse_mode="html", reply_markup=markup)
+
+
+@bot.message_handler(content_types=["document"])
+async def document(message):
+    userid = message.chat.id
+    markup = start_menu()
+    final_message = "\U0001F916 Ого, это документ?"
+    await bot.send_message(userid, final_message, parse_mode="html", reply_markup=markup)
+
+
+@bot.message_handler(content_types=["location"])
+async def location(message):
+    userid = message.chat.id
+    markup = start_menu()
+    final_message = "\U0001F916 Ого, это геометка?"
+    await bot.send_message(userid, final_message, parse_mode="html", reply_markup=markup)
+
+
+@bot.message_handler(content_types=["contact"])
+async def contact(message):
+    userid = message.chat.id
+    markup = start_menu()
+    final_message = "\U0001F916 Чей же это контакт?"
+    await bot.send_message(userid, final_message, parse_mode="html", reply_markup=markup)
+
+
+@bot.message_handler(content_types=["sticker"])
+async def sticker(message):
+    markup = start_menu()
+    final_message = "\U0001F916 Неплохо, я тоже так умею умею"
+    sti = open("batman-emblem.webp", 'rb')
+    await bot.reply_to(message, final_message, parse_mode="html", reply_markup=markup)
+    await bot.send_sticker(message.chat.id, sti)
 
 
 bot.add_custom_filter(asyncio_filters.StateFilter(bot))
