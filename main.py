@@ -214,8 +214,9 @@ def gen_markup(dframe, dish: str):
     indexes = list(~pd.isna(df[dish]))
     lst = dframe[dish][indexes]
     r_width = len(lst) // 2 + len(lst) % 2
+    actual_positions = [i for i, j in zip(range(len(lst) + 1), indexes) if j is True]
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=r_width)
-    markup.add(*[types.KeyboardButton(f"{i + 1}") for i in range(len(lst))])
+    markup.add(*[types.KeyboardButton(f"{i + 1}") for i in actual_positions])
     return markup
 
 
