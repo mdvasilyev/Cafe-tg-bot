@@ -20,7 +20,7 @@ conn = psycopg2.connect(
 )
 cur = conn.cursor(cursor_factory=DictCursor)
 
-bot = AsyncTeleBot("6049022584:AAEK8QxoT9kN0E1LTYaNhKNz4NjDdTxIdok", state_storage=StateMemoryStorage())
+bot = AsyncTeleBot("token", state_storage=StateMemoryStorage())
 
 admins = [1208161291, 659350346]
 actual_admin = admins[0]
